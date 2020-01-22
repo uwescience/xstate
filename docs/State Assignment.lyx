@@ -1,0 +1,494 @@
+#LyX 2.2 created this file. For more info see http://www.lyx.org/
+\lyxformat 508
+\begin_document
+\begin_header
+\save_transient_properties true
+\origin unavailable
+\textclass article
+\begin_preamble
+\usepackage{babel}
+\end_preamble
+\use_default_options false
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding iso8859-15
+\fontencoding T1
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_package amsmath 1
+\use_package amssymb 0
+\use_package cancel 0
+\use_package esint 1
+\use_package mathdots 0
+\use_package mathtools 0
+\use_package mhchem 0
+\use_package stackrel 0
+\use_package stmaryrd 0
+\use_package undertilde 0
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 0
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+State Assignment Using Decision Trees
+\end_layout
+
+\begin_layout Standard
+Given a vector 
+\begin_inset Formula $x$
+\end_inset
+
+ of gene expressions, state assignment determines which of several states
+ 
+\begin_inset Formula $s$
+\end_inset
+
+ in 
+\begin_inset Formula $S$
+\end_inset
+
+ is the best label for 
+\begin_inset Formula $x$
+\end_inset
+
+.
+ This is a classification problem.
+\end_layout
+
+\begin_layout Standard
+In state assignment, we are given 
+\begin_inset Formula $[X^{T}S]$
+\end_inset
+
+, gene expression data paired with its associated state.
+ 
+\begin_inset Formula $X$
+\end_inset
+
+ has columns indexed by 
+\begin_inset Formula $K$
+\end_inset
+
+ gene (features) and 
+\begin_inset Formula $N$
+\end_inset
+
+ rows indexed by data instance.
+ Values in 
+\begin_inset Formula $X$
+\end_inset
+
+ are discrete.
+ In our case, values are 
+\begin_inset Formula $[-1,0,1]$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+We use the notataion 
+\begin_inset Formula $\sigma(x)=s$
+\end_inset
+
+ to denote that 
+\begin_inset Formula $s$
+\end_inset
+
+ is the state assigned to the vector 
+\begin_inset Formula $x$
+\end_inset
+
+ in 
+\begin_inset Formula $X^{T}$
+\end_inset
+
+.
+ The state assigned by algorithm 
+\begin_inset Formula $A$
+\end_inset
+
+ is 
+\begin_inset Formula $\sigma_{A}(x)$
+\end_inset
+
+.
+ Our objective in state assignment is to minimize 
+\begin_inset Formula $Pr(\sigma_{A}(x)\neq\sigma(x))$
+\end_inset
+
+ that probability that the state assigned by 
+\begin_inset Formula $A$
+\end_inset
+
+ differs from the true state.
+ We define 
+\begin_inset Formula $err(A,X)=\sum_{x\in X}1_{\sigma_{A}(x)\neq\sigma(x)}$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+We use 
+\begin_inset Formula $\nu_{k}$
+\end_inset
+
+ to denote t
+\end_layout
+
+\begin_layout Section*
+Technical Approach
+\end_layout
+
+\begin_layout Subsection*
+Data preparation
+\end_layout
+
+\begin_layout Enumerate
+Transform data to trinary values
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+Normalize for size of RNA library and gene length
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Formula $log_{2}$
+\end_inset
+
+ values
+\end_layout
+
+\begin_layout Enumerate
+Convert 
+\begin_inset Formula $x$
+\end_inset
+
+, the values normalized as above, to trinary values.
+ 
+\begin_inset Formula $v\in\left\{ -1,0,1\right\} $
+\end_inset
+
+.
+ 
+\begin_inset Formula $v=-1$
+\end_inset
+
+ if 
+\begin_inset Formula $log_{2}x\leq-1$
+\end_inset
+
+, 
+\begin_inset Formula $v=1$
+\end_inset
+
+ if 
+\begin_inset Formula $log_{2}x\geq1$
+\end_inset
+
+.
+ Otherwise, 
+\begin_inset Formula $v=0$
+\end_inset
+
+.
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Eliminate 
+\begin_inset Formula $T_{0}$
+\end_inset
+
+ since all 0's.
+\end_layout
+
+\begin_layout Enumerate
+Combine Normoxia with Resuscitation since insufficient values for Normoxia.
+\end_layout
+
+\begin_layout Enumerate
+Combine perfectly correlated features
+\end_layout
+
+\begin_layout Subsection*
+Method
+\end_layout
+
+\begin_layout Enumerate
+ensemble1 = Random Forest without boostrapping
+\end_layout
+
+\begin_layout Enumerate
+emsemble2 = Random Forest with bootstrapping
+\end_layout
+
+\begin_layout Enumerate
+top_features = top N features from emsemble1, ensemble2
+\end_layout
+
+\begin_layout Enumerate
+ensemble = RandomForest on top_features with bootstrapping
+\end_layout
+
+\begin_layout Enumerate
+Assess accuracy ensemble vs.
+ ensemble2
+\end_layout
+
+\begin_layout Enumerate
+Plot genes
+\end_layout
+
+\begin_layout Enumerate
+Construct concensus decision tree
+\end_layout
+
+\begin_layout Subsection*
+Trinary Values
+\end_layout
+
+\begin_layout Enumerate
+The trinary encoding is ordinal w.r.t.
+ the underlying values.
+\end_layout
+
+\begin_layout Enumerate
+Note that intuitions about variances are preserved.
+ For example, the sample variance of 
+\begin_inset Formula $v_{0,1}=(0,1,\cdots,1)$
+\end_inset
+
+ is the same as the sample variance of 
+\begin_inset Formula $v_{1,0}=(1,0,\cdots,0)$
+\end_inset
+
+.
+ That is, for vectors of length 
+\begin_inset Formula $n,$
+\end_inset
+
+ 
+\begin_inset Formula $E(v_{0,1})=\frac{n-1}{n}$
+\end_inset
+
+ and so 
+\begin_inset Formula $Var(v_{0,1})=\left(\frac{n-1}{n}\right)^{2}+(n-1)\left(1-\frac{n-1}{n}\right)^{2}$
+\end_inset
+
+
+\begin_inset Formula $=\left(1-\frac{1}{n}\right)^{2}+(n-1)\left(\frac{1}{n}\right)^{2}=Var(v_{1,0})$
+\end_inset
+
+ .
+ A similar argument applies to 
+\begin_inset Formula $v_{-1,0}=(-1,0,\cdots,0)$
+\end_inset
+
+ and 
+\begin_inset Formula $v_{0,-1}$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Subsection*
+Single Tree Analysis
+\end_layout
+
+\begin_layout Enumerate
+Analysis 1: All data
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+Construct DT with all data
+\end_layout
+
+\begin_layout Enumerate
+Analyze the effective number of independent features given feature 
+\begin_inset Quotes eld
+\end_inset
+
+correlations
+\begin_inset Quotes erd
+\end_inset
+
+ (can we use correlation or need a new measure because of nominal values).
+\end_layout
+
+\begin_layout Enumerate
+Assess probability of uniquely identifying states under the null hypothesis
+ of random and independent assignment of expression values
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Analysis 2: Cross validation
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+Compare misclassification rates with random for 5 classes
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Analysis 3: Sensitivity to random perturbations of the data
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+Train on data with an error fraction 
+\begin_inset Formula $f$
+\end_inset
+
+.
+ Do repeatedly to see stability of features.
+ Relate to correlation blocks.
+\end_layout
+
+\begin_layout Enumerate
+Evaluate on new data with an error fraction 
+\begin_inset Formula $f$
+\end_inset
+
+
+\end_layout
+
+\end_deeper
+\begin_layout Subsection*
+Random Forests
+\end_layout
+
+\begin_layout Enumerate
+Create random forest with all features
+\end_layout
+
+\begin_layout Enumerate
+Construct the feature evaluation vector 
+\begin_inset Formula $E=\{e_{ij}\}$
+\end_inset
+
+ for features 
+\begin_inset Formula $j$
+\end_inset
+
+ and tree 
+\begin_inset Formula $i$
+\end_inset
+
+ such that 
+\begin_inset Formula $e_{ij}=score_{i}$
+\end_inset
+
+ if feature 
+\begin_inset Formula $j$
+\end_inset
+
+ is in tree 
+\begin_inset Formula $i$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Enumerate
+Cluster the features creating 
+\begin_inset Formula $C_{1},\cdots,C_{M}$
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Enumerate
+Find the clusters with the largest 
+\begin_inset Formula $\frac{1}{|C_{m}|}\sum_{j\in C_{m}}|e_{*j}|$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+For each
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+Construct a decision tree with just its features
+\end_layout
+
+\begin_layout Enumerate
+Calculate the score
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Choose features in clusters with trees with the largest scores.
+\end_layout
+
+\begin_layout Enumerate
+Do random forest on the subset selected and which features co-occur in trees
+ and which do not.
+ Those that do not are likely equivalent.
+ Those that do co-occur are in some ways complementary.
+\end_layout
+
+\begin_layout Section*
+Visualizations
+\end_layout
+
+\begin_layout Section*
+Vectorized Implementation
+\end_layout
+
+\end_body
+\end_document
