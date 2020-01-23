@@ -19,7 +19,7 @@ install:
 
 script:
   - conda activate test-environment
-  - conda upgrade sip
+  - pip install pyqt5
   - PYTHONPATH="`pwd`/xstate/python:`pwd`/common_python"
   - export PYTHONPATH
   - nosetests xstate/python/tests
