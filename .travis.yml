@@ -14,11 +14,11 @@ install:
   - conda config --set always_yes yes --set changeps1 no
   - conda info --all
   - conda update -q conda
-
-script:
-  - ls -l
   - conda create -q -n test-environment
   - conda env update -n test-environment -f environment.yml
+  - conda upgrade sip
+
+script:
   - conda activate test-environment
   - PYTHONPATH="`pwd`/xstate/python:`pwd`/common_python"
   - export PYTHONPATH

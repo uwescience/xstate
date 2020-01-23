@@ -13,3 +13,4 @@ dependencies:
   - graphviz
   - scikit-learn
   - notebook
+  - sip
