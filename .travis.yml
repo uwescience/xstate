@@ -22,4 +22,4 @@ script:
   - conda activate test-environment
   - PYTHONPATH="`pwd`/xstate/python:`pwd`/common_python"
   - export PYTHONPATH
-  - nosetests xstate/python/tests/common
+  - nosetests xstate/python/tests
