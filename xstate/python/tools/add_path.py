@@ -12,7 +12,7 @@ def getRootDir():
   while not done:
     root_dir = os.path.dirname(root_dir)
     _, this_dir = os.path.split(root_dir)
-    if this_dir == XSTATE:
+    if XSTATE in this_dir:
       if found_xstate:
         done = True
       else:
