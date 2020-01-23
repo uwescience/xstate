@@ -1,0 +1,14 @@
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - numpy
+  - pandas
+  - python
+  - matplotlib
+  - nose
+  - seaborn
+  - scipy
+  - graphviz
+  - scikit-learn
+  - notebook
