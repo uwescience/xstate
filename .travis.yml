@@ -16,10 +16,10 @@ install:
   - conda update -q conda
   - conda create -q -n test-environment
   - conda env update -n test-environment -f environment.yml
-  - conda upgrade sip
 
 script:
   - conda activate test-environment
+  - conda upgrade sip
   - PYTHONPATH="`pwd`/xstate/python:`pwd`/common_python"
   - export PYTHONPATH
   - nosetests xstate/python/tests
