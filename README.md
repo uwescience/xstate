@@ -1,4 +1,4 @@
-<img src="https://api.travis-ci.org/uwescience/xstate.svg?branch=master" width="100"/>
+<img src="https://api.travis-ci.com/uwescience/xstate.svg?branch=master" width="100"/>
    
 # xstate: State Analysis for Gene Expression
 
