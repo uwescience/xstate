@@ -81,7 +81,9 @@ class TermMatrix(object):
       df = df.reset_index()
       return df.groupby(cn.GROUP)
     def extract(df, key, col):
-      return df.loc[[key], col].values.tolist()
+      sel = df.index == key
+      result = df[sel][col].values.tolist()
+      return result
     #
     df_term = self._makeTermGroup()
     df_gene = self.grouper.df_gene_group

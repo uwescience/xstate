@@ -12,5 +12,6 @@ dependencies:
   - scipy
   - graphviz
   - scikit-learn
+  - seaborn
   - notebook
   - sip
