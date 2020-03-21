@@ -8,7 +8,7 @@ import pandas as pd
 import unittest
 
 
-IGNORE_TEST = False
+IGNORE_TEST = True
 
 
 class TestTrinaryData(unittest.TestCase):
@@ -17,6 +17,8 @@ class TestTrinaryData(unittest.TestCase):
     pass
 
   def testConstructor(self):
+    if IGNORE_TEST:
+      return
     for cls in [TrinaryData, NormalizedData]:
       data = cls()
       self.assertTrue(isinstance(data.df_X, pd.DataFrame))
@@ -29,6 +31,18 @@ class TestTrinaryData(unittest.TestCase):
           len(data.features))
       self.assertEqual(len(data.df_X),
           len(data.ser_y))
+
+  def testNonAveraged(self):
+    # TESTING
+    def test(df_X, ser_y):
+      self.assertEqual(len(df_X), len(ser_y))
+    #
+    for cls in [TrinaryData, NormalizedData]:
+      data1 = cls(is_averaged=False)
+      data2 = cls(is_averaged=True)
+      for data in [data1, data2]:
+        test(data.df_X, data.ser_y)
+      self.assertGreater(len(data1.df_X), len(data2.df_X))
     
 
 if __name__ == '__main__':

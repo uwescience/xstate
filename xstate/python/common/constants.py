@@ -1,5 +1,8 @@
 import os
 
+# Special Values
+TIME_0 = "T0"  # The reference column
+
 # Data Frame Columns
 COUNT = "count"
 CNT_DOWN = "cnt_down"  # Count of -1s present

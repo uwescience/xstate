@@ -36,11 +36,14 @@ class TestDataProvider(unittest.TestCase):
     df_data = pd.DataFrame({'a': range(10)})
     self.provider._dfs_centered_adjusted_read_count = [df_data for _ in range(SIZE)]
 
-  def checkDF(self, df, is_check_index=True):
+  def checkDF(self, df, is_check_index=True,
+      is_check_column=True, **kwargs):
     """
     Verifies DataFrames
     :param pd.DataFrame df:
     :param bool is_check_index: checks that index is GENE
+    :param bool is_check_column: checks column for time format
+    :param dict kwargs: arguments passed to checkTimes
     """
     # Non-zero length
     self.assertGreater(len(df), 0)
@@ -53,6 +56,27 @@ class TestDataProvider(unittest.TestCase):
     # No nan values
     trues = [not np.nan in df[c] for c in df.columns]
     self.assertTrue(all(trues))
+    if is_check_column:
+      self.checkTimes(df, **kwargs)
+
+  def checkTimes(self, times, is_replicated=False):
+    """
+    Verifies that times have the correct format.
+    :param list times:
+    :param bool is_replicated: expects a .%d format
+    """
+    columns = []
+    for time in times:
+      self.assertTrue("T" in time)
+      if is_replicated:
+        self.assertTrue(data_provider.SEPARATOR in time)
+        splits = time.split(data_provider.SEPARATOR)
+        columns.append(splits[0])
+      else:
+        columns.append(time)
+    diff = set(columns).symmetric_difference(
+        self.provider.df_normalized.columns)
+    self.assertEqual(len(diff), 0)
   
   def testEquals(self):
     if IGNORE_TEST:
@@ -92,7 +116,7 @@ class TestDataProvider(unittest.TestCase):
       return
     self.init()
     df = self.provider._makeGeneDescriptionDF()
-    self.checkDF(df)
+    self.checkDF(df, is_check_column=False)
 
   def testGetNumRepl(self):
     if IGNORE_TEST:
@@ -128,6 +152,15 @@ class TestDataProvider(unittest.TestCase):
         self.df_data.columns)
     self.assertEqual(len(difference), 0)
 
+  def concatDFS(self):
+    dfs = []
+    dfs.extend(self.provider.dfs_read_count)
+    dfs.extend(self.provider.dfs_adjusted_read_count)
+    dfs.extend(self.provider.dfs_adjusted_read_count_wrtT0)
+    dfs.extend(self.provider.dfs_adjusted_read_count_wrtT0_log2)
+    dfs.extend(self.provider.dfs_centered_adjusted_read_count)
+    return dfs
+
   def testDo(self):
     if IGNORE_TEST:
       return
@@ -144,8 +177,10 @@ class TestDataProvider(unittest.TestCase):
     # Specific tests
     dfs_adjusted_read_count  \
         = self.provider.dfs_adjusted_read_count
-    dfs_adjusted_read_count_wrt0  \
-        = self.provider.dfs_adjusted_read_count_wrt0
+    dfs_adjusted_read_count_wrtT0  \
+        = self.provider.dfs_adjusted_read_count_wrtT0
+    dfs_adjusted_read_count_wrtT0_log2  \
+        = self.provider.dfs_adjusted_read_count_wrtT0_log2
     dfs_centered_adjusted_read_count  \
         = self.provider.dfs_centered_adjusted_read_count
     testLessEqual(dfs_centered_adjusted_read_count,
@@ -154,7 +189,8 @@ class TestDataProvider(unittest.TestCase):
     self.assertEqual(
         len(dfs_centered_adjusted_read_count),
         data_provider.NUM_REPL)
-    [self.checkDF(df) for df in dfs_centered_adjusted_read_count]
+    [self.checkDF(df, is_replicated=True) for df in 
+        dfs_centered_adjusted_read_count]
     dfs = [
         self.provider.df_gene_description,
         self.provider.df_mean,
@@ -163,11 +199,9 @@ class TestDataProvider(unittest.TestCase):
         self.provider.df_normalized,
         self.provider.df_gene_expression_state,
         ]
-    dfs.extend(dfs_centered_adjusted_read_count)
-    dfs.extend(self.provider.dfs_read_count)
-    dfs.extend(dfs_adjusted_read_count)
-    dfs.extend(dfs_adjusted_read_count_wrt0)
-    [self.checkDF(df) for df in dfs]
+    [self.checkDF(df, is_check_column=False) for df in dfs]
+    for idx, df in enumerate(self.concatDFS()):
+      self.checkDF(df, is_replicated=True)
     dfs = [
         self.provider.df_kegg_gene_pathways, 
         self.provider.df_go_terms, 
@@ -175,7 +209,9 @@ class TestDataProvider(unittest.TestCase):
         self.provider.df_ko_terms, 
         self.provider.df_kegg_pathways, 
         ]
-    [self.checkDF(df, is_check_index=False) for df in dfs]
+    [self.checkDF(df, is_check_index=False,
+        is_check_column=False)
+        for df in dfs]
     columns = self.provider.df_stage_matrix.columns
     diff = set(columns).symmetric_difference(
         [cn.STAGE_NAME, cn.STAGE_COLOR])
@@ -198,8 +234,9 @@ class TestDataProvider(unittest.TestCase):
     provider.do()
     df = provider.dfs_read_count[0]
     df_normalized = provider.normalizeReadsDF(df)
+    columns = ["T%d" % n for n in range(len(df.columns))]
     self.assertTrue(helpers.isValidDataFrame(df_normalized,
-        df.columns))
+        columns))
     self.assertEqual(len(df), len(df_normalized))
     ser_length = provider.df_gene_description[cn.LENGTH]
   

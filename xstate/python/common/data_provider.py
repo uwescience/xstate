@@ -30,12 +30,20 @@ Makes Data Available in Standard Formats. Creates the following data:
   dfs_adjusted_read_count - readcounts adjusted w.r.t. library size, gene length
      index: cn.GENE_ID
      column: time
-  dfs_adjusted_read_count_wrt0 - adjusted w.r.t. libary size, gene length, time 0
+  dfs_adjusted_read_count_wrtT0 - adjusted w.r.t. libary size, gene length, time 0
+     index: cn.GENE_ID
+     column: time
+  dfs_adjusted_read_count_wrtT0_log2 - in log2 units
      index: cn.GENE_ID
      column: time
   dfs_centered_adjusted_read_count - centers w.r.t. mean value of gene
      index: cn.GENE_ID
      column: time
+
+For unreplicated data, 
+time columns have headings of the form T0, T1, ...
+For replicated data, the format is "T%d.%d". The
+latter is called the time replicated format.
 """
 
 import common.constants as cn
@@ -59,13 +67,16 @@ FILENAME_KO_TERMS = "mtb_gene_ec"
 FILENAME_KEGG_PATHWAYS = "mtb_kegg_pathways"
 FILENAME_KEGG_GENE_PATHWAY = "mtb_kegg_gene_pathway"
 NUM_REPL = 3
-TIME_0 = "T0"
 T0 = 0
 MIN_LOG2_VALUE = -10
 MIN_VALUE = 10e-5
 MILLION = 1e6
 KILOBASE = 1e3  # Thousand bases
+SEPARATOR = "."  # Separator used in time columns to indicate replication
 
+
+
+############################### CLASSES #########################
 class DataProvider(object):
   # Instance variables in the class
   instance_variables = [
@@ -84,12 +95,15 @@ class DataProvider(object):
     "df_kegg_gene_pathways",
     "dfs_read_count",
     "_dfs_adjusted_read_count",
-    "_dfs_adjusted_read_count_wrt0",
+    "_dfs_adjusted_read_count_wrtT0",
+    "_dfs_adjusted_read_count_wrtT0_log2",
     "_dfs_centered_adjusted_read_count",
     ]
 
-  def __init__(self, data_dir=cn.DATA_DIR, is_normalized_wrtT0=True,
-      is_only_qgenes=True, is_display_errors=True):
+  def __init__(self, data_dir=cn.DATA_DIR,
+      is_normalized_wrtT0=True,
+      is_only_qgenes=True,
+      is_display_errors=True):
     """
     :param bool is_normalized_wrtT0: normalize data w.r.t. T0
         Otherwise, standardize values using the mean.
@@ -110,7 +124,10 @@ class DataProvider(object):
       if provider is None:
         stmt = "self.%s = None" % var
       else:
-        stmt = "self.%s = provider.%s" % (var, var)
+        if var in dir(provider):
+          stmt = "self.%s = provider.%s" % (var, var)
+        else:
+          stmt = "self.%s = None" % var
       exec(stmt)
 
   def _makeDFFromCSV(self, filename, is_index_geneid=False):
@@ -196,7 +213,7 @@ class DataProvider(object):
     Creates a list of dataframes for each replication of the counts.
     :return list-pd.DataFrame:
       indexed by GENE_ID
-      column names are integers of time indices
+      column names are in the time replicated format ("T%d.%d)
     Notes
       1. Assumes that self.df_gene_description has been constructed
       2. Counts are normalized:
@@ -212,20 +229,25 @@ class DataProvider(object):
     df = self._reduceDF(df_data)
     # Separate the replications into different dataframes
     name_map = {0: 'A', 1: 'B', 2: 'C'}
+    int_map = {'A': 0, 'B': 1, 'C': 2}
     for repl in range(NUM_REPL):
-        # Select the columns for this replication
-        col_suffix = "_%s" % name_map[repl]
-        column_names = [c for c in df.columns if col_suffix in c]
-        # Transform names into numbers
-        new_names = {}
-        for name in column_names:
-            split_name = name.split("_")
-            new_name = split_name[2][1:]
-            new_names[name] = int(new_name)
-        df_repl = df[column_names]
-        df_repl = df_repl.rename(columns=new_names)
-        df_repl.index = df.index
-        dfs.append(df_repl)
+      # Select the columns for this replication
+      col_suffix = "_%s" % name_map[repl]
+      column_names = [c for c in df.columns 
+          if col_suffix in c]
+      # Transform names into numbers
+      new_names = {}
+      for name in column_names:
+        split_name = name.split("_")
+        replica_letter = split_name[3]
+        new_name = split_name[2][1:]
+        suffix = int_map[replica_letter]
+        new_names[name] = self._makeTime(
+            int(new_name), suffix=suffix)
+      df_repl = df[column_names]
+      df_repl = df_repl.rename(columns=new_names)
+      df_repl.index = df.index
+      dfs.append(df_repl)
     #
     return dfs
 
@@ -236,6 +258,9 @@ class DataProvider(object):
     Drops rows where all columns are minimum values.
     Assumes that self.df_gene_expression_state has been initialized.
     Only includes genes that are expressed.
+    :return pd.DataFrame:
+        rows: gene
+        columns: time
     """
     df = self._makeDFFromCSV(FILENAME_NORMALIZED)
     df = df.set_index(cn.GENE_ID)
@@ -243,7 +268,7 @@ class DataProvider(object):
     if self._is_normalized_wrtT0:
       drops = []  # Rows to drop
       for idx in df.index:
-        values = df.loc[idx, :] - df.loc[idx, TIME_0]
+        values = df.loc[idx, :] - df.loc[idx, cn.TIME_0]
         df.loc[idx, :] = [max(MIN_LOG2_VALUE,  v) for v in values]
         if all([v <= MIN_LOG2_VALUE for v in df.loc[idx, :]]):
           drops.append(idx)
@@ -259,16 +284,18 @@ class DataProvider(object):
     #
     return df
  
-  def normalizeReadsDF(self, df):
+  def normalizeReadsDF(self, df, suffix=None):
     """
     Transforms a vector of read counts into features and units used in analysis.
+    :param pd.DataFrame df:
+    :param str suffix:  suffix appended to column names
       1. Adjusts read counts for each gene based on length and library size.
          Uses the metric RPKM - reads per kilobase millions
       2. Deletes unused features
     :param pd.DataFrame df: 
-        index are genes, columns are instances, values are readcounts
-    :return pd.DataFrame: 
-        index are genes, columns are instances, values are readcounts
+        index are genes, 
+        columns are instances with the same values as self.df_normalized
+        values are read counts
     """
     # Adjust for library size
     ser_tot = df.sum(axis=0)/MILLION
@@ -287,7 +314,26 @@ class DataProvider(object):
       keep_genes = self.df_gene_expression_state.index
       df_result = df_result[df_result.index.isin(keep_genes)]
     #
+    df_result.columns = self.makeTimes(suffix=suffix)
     return df_result
+
+  def _makeTime(self, int_time, suffix=None):
+    result = "T%d" % int_time
+    if suffix is not None:
+      result = "%s%s%s" % (result, SEPARATOR, suffix)
+    return result
+  
+  def makeTimes(self, suffix=None):
+    """
+    Creates the names for time.
+    :return list-str:
+    """
+    if self.df_normalized is None:
+      df = self._makeDFFromCSV(FILENAME_NORMALIZED)
+    else:
+      df = self.df_normalized
+    return [self._makeTime(n, suffix=suffix) for n
+        in range(len(df.columns))]
 
   def _makeStageMatrixDF(self):
     """
@@ -327,36 +373,53 @@ class DataProvider(object):
   @property
   def dfs_adjusted_read_count(self):
     """
-    Creates the dataframe replicats adjusted for
+    Creates the dataframe replicas adjusted for
     library size and gene length.
     :return list-pd.DataFrame:
         columns are times
     """
     if self._dfs_adjusted_read_count is None:
-      self._dfs_adjusted_read_count =   \
-          [self.normalizeReadsDF(df) for df in self.dfs_read_count]
+      self._dfs_adjusted_read_count = []
+      for idx, df in enumerate(self.dfs_read_count):
+        self._dfs_adjusted_read_count.append(
+            self.normalizeReadsDF(df, suffix=idx))
     return self._dfs_adjusted_read_count
 
   @property
-  def dfs_adjusted_read_count_wrt0(self):
+  def dfs_adjusted_read_count_wrtT0(self):
     """
-    Creates the dataframe replicats adjusted for
+    Creates the dataframe replicas adjusted for
     library size and gene length normalized w.r.t. time 0.
     :return list-pd.DataFrame:
         columns are times
     """
-    if self._dfs_adjusted_read_count_wrt0 is None:
+    if self._dfs_adjusted_read_count_wrtT0 is None:
       dfs = []
-      for df in self.dfs_adjusted_read_count:
+      for idx, df in  \
+          enumerate(self.dfs_adjusted_read_count):
         sers = []
+        t0_column = [c for c in df.columns
+            if cn.TIME_0 in c][0]
         for column in df.columns:
-          sers.append(df[column] / df[T0])
+          sers.append(df[column] / df[t0_column])
         df_adj = pd.DataFrame(sers)
-        df_adj.index = df.columns
+        df_adj.index = self.makeTimes(suffix=idx)
         dfs.append(df_adj.T)
-      self._dfs_adjusted_read_count_wrt0 = dfs
-      #self._dfs_adjusted_read_count_wrt0 = [ df/df[T0] for df in self.dfs_adjusted_read_count]
-    return self._dfs_adjusted_read_count_wrt0
+      self._dfs_adjusted_read_count_wrtT0 = dfs
+    return self._dfs_adjusted_read_count_wrtT0
+
+  @property
+  def dfs_adjusted_read_count_wrtT0_log2(self):
+    """
+    dfs_adjusted_read_count_wrtT0 in log2 units
+    :return list-pd.DataFrame:
+        columns are times, rows are genes
+    """
+    if self._dfs_adjusted_read_count_wrtT0_log2 is None:
+      self._dfs_adjusted_read_count_wrtT0_log2 =  \
+          [df.applymap(lambda v: np.log2(v)) for df in
+          self.dfs_adjusted_read_count_wrtT0]
+    return self._dfs_adjusted_read_count_wrtT0_log2
 
   @property
   def dfs_centered_adjusted_read_count(self):
@@ -386,9 +449,11 @@ class DataProvider(object):
     else:
       # Gene categorizations
       self.df_ec_terms =  \
-          self._makeDFFromCSV(FILENAME_EC_TERMS, is_index_geneid=True)
+          self._makeDFFromCSV(FILENAME_EC_TERMS,
+          is_index_geneid=True)
       self.df_ko_terms =  \
-          self._makeDFFromCSV(FILENAME_KO_TERMS, is_index_geneid=True)
+          self._makeDFFromCSV(FILENAME_KO_TERMS, 
+          is_index_geneid=True)
       self.df_kegg_pathways =  \
           self._makeDFFromCSV(FILENAME_KEGG_PATHWAYS,
           is_index_geneid=False)
