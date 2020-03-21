@@ -50,6 +50,7 @@ import common.constants as cn
 import common_python.constants as cpn
 from common_python.util.persister import Persister
 
+import copy
 import os
 import pandas as pd
 import numpy as np
@@ -174,6 +175,21 @@ class DataProvider(object):
   def _getNumRepl(self):
       return NUM_REPL
 
+  def removeReplicaStrings(self, dfs):
+    """
+    Removes the replica strings from columns of the dataframes.
+    :param list-pd.DataFrame: columns are times
+    :param list-pd.DataFrame:
+    """
+    new_dfs = copy.deepcopy(dfs)
+    for df in new_dfs:
+      new_columns = []
+      for column in df.columns:
+        splits = column.split(SEPARATOR)
+        new_columns.append(splits[0])
+      df.columns = new_columns
+    return new_dfs
+
   def _makeMeanDF(self, is_abs=True):
       """
       Creates a dataframe for the mean values.
@@ -184,7 +200,7 @@ class DataProvider(object):
         predicate = lambda v: np.abs(v)
       else:
         predicate = lambda v: v
-      dfs = self.dfs_centered_adjusted_read_count
+      dfs = self.removeReplicaStrings(self.dfs_centered_adjusted_read_count)
       dfs_new = [df.applymap(predicate) for df in dfs]
       return sum (dfs_new) / len(dfs)
 
@@ -195,7 +211,7 @@ class DataProvider(object):
       """
       num_repl = self._getNumRepl()
       df_mean = self._makeMeanDF()
-      dfs = self.dfs_centered_adjusted_read_count
+      dfs = self.removeReplicaStrings(self.dfs_centered_adjusted_read_count)
       df_std = (sum([dfs[n]*dfs[n] for n in range(num_repl)])
           - num_repl * df_mean * df_mean) / (num_repl - 1)
       return df_std.pow(1./2)
@@ -422,11 +438,8 @@ class DataProvider(object):
     """
     if self._dfs_adjusted_read_count_wrtT0_log2 is None:
       self._dfs_adjusted_read_count_wrtT0_log2 =  \
-          [df.applymap(lambda v: np.log2(v)) for df in
-          self.dfs_adjusted_read_count_wrtT0]
-      self._dfs_adjusted_read_count_wrtT0_log2 =  \
-          [df.applymap(lambda v: 0 if np.isnan(v) else v) for df in
-          self.dfs_adjusted_read_count_wrtT0_log2]
+          [df.applymap(lambda v: np.log2(v) if v > 0 else 0)
+          for df in self.dfs_adjusted_read_count_wrtT0]
     return self._dfs_adjusted_read_count_wrtT0_log2
 
   @property

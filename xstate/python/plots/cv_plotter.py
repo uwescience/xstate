@@ -53,6 +53,7 @@ class CVPlotter():
     ax = plt.gca()
     # Plot CVs of genes
     ser = self._provider.df_cv.mean()  # Average over geans
+    import pdb; pdb.set_trace()
     ax.plot(hours, ser.values, linestyle='dashed', marker="o",
         color='r')
     plt.xlabel("hours")

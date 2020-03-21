@@ -54,8 +54,14 @@ class TestDataProvider(unittest.TestCase):
         import pdb; pdb.set_trace()
       self.assertTrue(b)
     # No nan values
-    trues = [not np.nan in df[c] for c in df.columns]
-    self.assertTrue(all(trues))
+    types = [np.dtype('int64'), np.dtype('float64'), np.dtype('bool')]
+    for column in df.columns:
+      ser = df[column]
+      if ser.dtype in types:
+        is_nan = np.isnan(ser.sum(skipna=False))
+        if is_nan:
+          import pdb; pdb.set_trace()
+        self.assertFalse(is_nan)
     if is_check_column:
       self.checkTimes(df, **kwargs)
 
@@ -192,26 +198,26 @@ class TestDataProvider(unittest.TestCase):
     [self.checkDF(df, is_replicated=True) for df in 
         dfs_centered_adjusted_read_count]
     dfs = [
+        self.provider.df_cv,
         self.provider.df_gene_description,
         self.provider.df_mean,
         self.provider.df_std,
-        self.provider.df_cv,
         self.provider.df_normalized,
         self.provider.df_gene_expression_state,
         ]
-    [self.checkDF(df, is_check_column=False) for df in dfs]
     for idx, df in enumerate(self.concatDFS()):
       self.checkDF(df, is_replicated=True)
     dfs = [
+        self.provider.df_cv,
         self.provider.df_kegg_gene_pathways, 
         self.provider.df_go_terms, 
         self.provider.df_ec_terms, 
         self.provider.df_ko_terms, 
         self.provider.df_kegg_pathways, 
         ]
-    [self.checkDF(df, is_check_index=False,
+    for idx, df in enumerate(dfs):
+      self.checkDF(df, is_check_index=False,
         is_check_column=False)
-        for df in dfs]
     columns = self.provider.df_stage_matrix.columns
     diff = set(columns).symmetric_difference(
         [cn.STAGE_NAME, cn.STAGE_COLOR])
