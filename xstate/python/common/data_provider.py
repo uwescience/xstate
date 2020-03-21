@@ -284,9 +284,10 @@ class DataProvider(object):
     #
     return df
  
-  def normalizeReadsDF(self, df, suffix=None):
+  def normalizeReadsDF(self, df, suffix=None, is_time_columns=True):
     """
-    Transforms a vector of read counts into features and units used in analysis.
+    Transforms read counts into features and units
+    used in analysis.
     :param pd.DataFrame df:
     :param str suffix:  suffix appended to column names
       1. Adjusts read counts for each gene based on length and library size.
@@ -296,6 +297,7 @@ class DataProvider(object):
         index are genes, 
         columns are instances with the same values as self.df_normalized
         values are read counts
+    :param bool is_time_columns: has columns of times
     """
     # Adjust for library size
     ser_tot = df.sum(axis=0)/MILLION
@@ -314,7 +316,8 @@ class DataProvider(object):
       keep_genes = self.df_gene_expression_state.index
       df_result = df_result[df_result.index.isin(keep_genes)]
     #
-    df_result.columns = self.makeTimes(suffix=suffix)
+    if is_time_columns:
+      df_result.columns = self.makeTimes(suffix=suffix)
     return df_result
 
   def _makeTime(self, int_time, suffix=None):
@@ -398,8 +401,7 @@ class DataProvider(object):
       for idx, df in  \
           enumerate(self.dfs_adjusted_read_count):
         sers = []
-        t0_column = [c for c in df.columns
-            if cn.TIME_0 in c][0]
+        t0_column = self.getT0s(df.columns)[0]
         for column in df.columns:
           sers.append(df[column] / df[t0_column])
         df_adj = pd.DataFrame(sers)
@@ -407,6 +409,9 @@ class DataProvider(object):
         dfs.append(df_adj.T)
       self._dfs_adjusted_read_count_wrtT0 = dfs
     return self._dfs_adjusted_read_count_wrtT0
+
+  def getT0s(self, values):
+    return [c for c in values if cn.TIME_0 in c]
 
   @property
   def dfs_adjusted_read_count_wrtT0_log2(self):
@@ -419,6 +424,9 @@ class DataProvider(object):
       self._dfs_adjusted_read_count_wrtT0_log2 =  \
           [df.applymap(lambda v: np.log2(v)) for df in
           self.dfs_adjusted_read_count_wrtT0]
+      self._dfs_adjusted_read_count_wrtT0_log2 =  \
+          [df.applymap(lambda v: 0 if np.isnan(v) else v) for df in
+          self.dfs_adjusted_read_count_wrtT0_log2]
     return self._dfs_adjusted_read_count_wrtT0_log2
 
   @property

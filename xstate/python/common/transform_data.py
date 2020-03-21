@@ -2,7 +2,9 @@
 
 from common import constants as cn
 from common.data_provider import DataProvider
+from common import data_provider
 
+import copy
 import os
 import pandas as pd
 import numpy as np
@@ -57,12 +59,26 @@ def aggregateGenes(df=None, provider=None):
   df_result.columns = df_trinary.columns
   return df_result
 
+def stripReplicaString(names):
+  """
+  Strips the replica information from a time.
+  :param list-str names:
+  :return list-str:
+  """
+  new_names = []
+  for name in names:
+    splits = name.split(data_provider.SEPARATOR)
+    new_names.append(splits[0])
+  return new_names
+
 def trinaryReadsDF(csv_file=None, df_sample=None,
-    csv_dir=cn.SAMPLES_DIR, is_display_errors=True):
+    csv_dir=cn.SAMPLES_DIR, is_display_errors=True,
+    is_time_columns=True):
   """
   Creates trinary values for read counts w.r.t. data provider.
   (a) adjusting for gene length, (b) library size,
-  (c) log2, (d) ratio w.r.t. T0.
+  (c) log2, (d) ratio w.r.t. T0. The T0 values is
+  the average of the values in default DataProvider.
   Data may come from an existing dataframe or a CSV file.
   :param str csv_file: File in "samples" directory.
       columns are: "GENE_ID", instance ids
@@ -73,7 +89,8 @@ def trinaryReadsDF(csv_file=None, df_sample=None,
       indexes are instances, trinary values
   At least one of df_sample and csv_file must be non-null
   """
-  provider = DataProvider(is_display_errors=is_display_errors)
+  provider = DataProvider(
+      is_display_errors=is_display_errors)
   provider.do()
   if df_sample is None:
     path = os.path.join(csv_dir, csv_file)
@@ -81,11 +98,15 @@ def trinaryReadsDF(csv_file=None, df_sample=None,
     df_sample.index = df_sample['GENE_ID']
     del df_sample['GENE_ID']
   #
-  df_normalized = provider.normalizeReadsDF(df_sample)
+  df_normalized = provider.normalizeReadsDF(df_sample,
+      is_time_columns=is_time_columns)
   # Compute trinary values relative to original reads
-  df_ref = sum(provider.dfs_adjusted_read_count)  \
-      / len(provider.dfs_adjusted_read_count)  # Mean values
-  ser_ref = df_ref[cn.REF_TIME]
+  dfs = copy.deepcopy(provider.dfs_adjusted_read_count)
+  for df in dfs:
+    df.columns = stripReplicaString(df.columns)
+  df_ref = sum(dfs) / len(provider.dfs_adjusted_read_count)
+  col_name = provider.getT0s(df_ref)[0]
+  ser_ref = df_ref[col_name]
   return calcTrinaryComparison(df_normalized, ser_ref=ser_ref)
 
 def calcTrinaryComparison(df, ser_ref=None, threshold=1, is_convert_log2=True):

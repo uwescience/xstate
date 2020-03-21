@@ -13,7 +13,7 @@ import unittest
 IGNORE_TEST = False
 
 
-class TestDataTransformer(unittest.TestCase):
+class TestFunctions(unittest.TestCase):
 
   def setUp(self):
     if IGNORE_TEST:
@@ -47,7 +47,8 @@ class TestDataTransformer(unittest.TestCase):
     provider = DataProvider()
     provider.do()
     df = provider.dfs_read_count[0]
-    df_result = transform_data.trinaryReadsDF(df_sample=df)
+    df_result = transform_data.trinaryReadsDF(
+        df_sample=df)
     # See if number of "-1" is excessive
     dff = df_result + df_result.applymap(lambda v: -np.abs(v))
     frac_minus1 = -dff.sum().sum()  \
@@ -56,7 +57,8 @@ class TestDataTransformer(unittest.TestCase):
     # Smoke tests for csv
     df_result = transform_data.trinaryReadsDF(
         csv_file="AM_MDM_Mtb_transcripts_DEseq.csv",
-        is_display_errors=False)
+        is_display_errors=False,
+        is_time_columns=False)
 
   # TODO: Fix so working with the same transformation of features,
   #       either all genes features or all gene-groups.
@@ -89,8 +91,6 @@ class TestDataTransformer(unittest.TestCase):
         df_result = calcTrinaryTimeSample(time_index)
         import pdb; pdb.set_trace()
         
-    
-
   def testCalcTrinaryComparison(self):
     if IGNORE_TEST:
       return
@@ -103,6 +103,17 @@ class TestDataTransformer(unittest.TestCase):
         ser_ref=df_in['a'])
     trues = [v == 0 for v in df_out['a']]
     self.assertTrue(all(trues))
+
+  def testStripReplicaString(self):
+    if IGNORE_TEST:
+      return
+    TIME = "TO"
+    SIZE = 3
+    names = ["%s.%d" % (TIME, n) for n in range(SIZE)]
+    result = transform_data.stripReplicaString(names)
+    self.assertEqual(result[0], TIME)
+    self.assertEqual(len(result), SIZE)
+  
 
 
 if __name__ == '__main__':

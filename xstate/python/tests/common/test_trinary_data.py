@@ -8,7 +8,7 @@ import pandas as pd
 import unittest
 
 
-IGNORE_TEST = True
+IGNORE_TEST = False
 
 
 class TestTrinaryData(unittest.TestCase):
@@ -33,7 +33,8 @@ class TestTrinaryData(unittest.TestCase):
           len(data.ser_y))
 
   def testNonAveraged(self):
-    # TESTING
+    if IGNORE_TEST:
+      return
     def test(df_X, ser_y):
       self.assertEqual(len(df_X), len(ser_y))
     #
