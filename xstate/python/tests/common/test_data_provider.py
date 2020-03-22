@@ -59,8 +59,6 @@ class TestDataProvider(unittest.TestCase):
       ser = df[column]
       if ser.dtype in types:
         is_nan = np.isnan(ser.sum(skipna=False))
-        if is_nan:
-          import pdb; pdb.set_trace()
         self.assertFalse(is_nan)
     if is_check_column:
       self.checkTimes(df, **kwargs)

@@ -8,12 +8,13 @@ import unittest
 
 
 IGNORE_TEST = False
+IS_PLOT = False
 
 
 class TestCVPlotter(unittest.TestCase):
 
   def setUp(self):
-    self.plotter = cv_plotter.CVPlotter(is_plot=False)
+    self.plotter = cv_plotter.CVPlotter(is_plot=IS_PLOT)
 
   def testHeatMap(self):
     if IGNORE_TEST:

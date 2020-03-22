@@ -88,8 +88,8 @@ class TestFunctions(unittest.TestCase):
     data = TrinaryData()
     data.df_X.columns = data.features
     for time_index in data.df_X.index:
-        df_result = calcTrinaryTimeSample(time_index)
-        import pdb; pdb.set_trace()
+      df_result = calcTrinaryTimeSample(time_index)
+      import pdb; pdb.set_trace()
         
   def testCalcTrinaryComparison(self):
     if IGNORE_TEST:
