@@ -300,7 +300,8 @@ class DataProvider(object):
     #
     return df
  
-  def normalizeReadsDF(self, df, suffix=None, is_time_columns=True):
+  def normalizeReadsDF(self, df, suffix=None,
+      is_time_columns=True):
     """
     Transforms read counts into features and units
     used in analysis.

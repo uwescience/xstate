@@ -28,13 +28,15 @@ def processExpressionData(data_file, data_dir=cn.SAMPLES_DIR,
   :param str parameter_file: path containing ensemble parameters
   Writes classifications to standard out.
   """
-  svm_ensemble = make_svm_ensemble.make(file_path=parameter_file,
-      is_force=False)
+  svm_ensemble = make_svm_ensemble.make(
+      file_path=parameter_file, is_force=False)
   trinary = trinary_data.TrinaryData(
       is_display_errors=is_display_errors)
   inv_dict = {v: k for k, v in trinary.state_dict.items()}
   path = os.path.join(data_dir, data_file)
-  df_trinary = transform_data.trinaryReadsDF(csv_file=path,
+  df_trinary = transform_data.trinaryReadsDF(
+      csv_file=path,
+      is_time_columns=False,
       is_display_errors=is_display_errors)
   df_classes = svm_ensemble.predict(df_trinary.T)
   columns = [inv_dict[v] for v in df_classes.columns]
