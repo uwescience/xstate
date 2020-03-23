@@ -16,6 +16,7 @@ import numpy as np
 import pandas as pd
 
 T1_INDEX = "T1"
+MIN_NUM_NORMOXIA = 2  # Minimum number of normoxia states
 
 
 class NormalizedData(object):
@@ -58,8 +59,11 @@ class NormalizedData(object):
         sers.append(new_ser_y)
       ser_y = pd.concat(sers)
     ser_y = ser_y.drop(self._getTimeIndices(ser_y.index))
-    # Equate Normoxia and Resuscitation
-    ser_y[ser_y == 'Normoxia'] = 'Resuscitation'
+    # Equate Normoxia and Resuscitation if there are too
+    # few states
+    if len(ser_y[ser_y == cn.STATE_NORMOXIA]) <= MIN_NUM_NORMOXIA:
+      ser_y[ser_y == cn.STATE_NORMOXIA]  \
+          = cn.STATE_RESCUSCITATION
     # Create converter from state name to numeric index
     states = ser_y.unique()
     self.state_dict = {k: v for v, k in enumerate(states)}
