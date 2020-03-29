@@ -76,7 +76,6 @@ KILOBASE = 1e3  # Thousand bases
 SEPARATOR = "."  # Separator used in time columns to indicate replication
 
 
-
 ############################### CLASSES #########################
 class DataProvider(object):
   # Instance variables in the class

@@ -10,6 +10,7 @@ state_dict - dictionary mapping string names to numbers
 
 import common.constants as cn
 from common.data_provider import DataProvider
+from common import data_provider
 import common.transform_data as transform_data
 
 import numpy as np
@@ -19,6 +20,7 @@ T1_INDEX = "T1"
 MIN_NUM_NORMOXIA = 2  # Minimum number of normoxia states
 
 
+################## CLASSES ###############
 class NormalizedData(object):
   """ Exposes values described above. """
 
@@ -42,7 +44,7 @@ class NormalizedData(object):
       dfs = [df.copy() for df in
           self.provider.dfs_adjusted_read_count_wrtT0_log2]
       self.df_X = pd.concat([df.T for df in dfs])
-    drop_indices = self._getTimeIndices(self.df_X.index)
+    drop_indices = self._getDropIndices(self.df_X.index)
     self.df_X = self.df_X.drop(drop_indices)
     self.features = self.df_X.columns.tolist()
     self.df_X.columns = range(len(self.features))
@@ -58,22 +60,29 @@ class NormalizedData(object):
            suffix=idx)
         sers.append(new_ser_y)
       ser_y = pd.concat(sers)
-    ser_y = ser_y.drop(self._getTimeIndices(ser_y.index))
+    ser_y = ser_y.drop(self._getDropIndices(ser_y.index))
     # Equate Normoxia and Resuscitation if there are too
     # few states
-    if len(ser_y[ser_y == cn.STATE_NORMOXIA]) <= MIN_NUM_NORMOXIA:
+    if len(ser_y[ser_y == cn.STATE_NORMOXIA])  \
+        <= MIN_NUM_NORMOXIA:
       ser_y[ser_y == cn.STATE_NORMOXIA]  \
           = cn.STATE_RESCUSCITATION
     # Create converter from state name to numeric index
     states = ser_y.unique()
     self.state_dict = {k: v for v, k in enumerate(states)}
-    self.ser_y = ser_y.apply(lambda k: self.state_dict[k] )
+    self.ser_y = ser_y.apply(
+        lambda k: self.state_dict[k])
 
-  def _getTimeIndices(self, indices, time_index=cn.TIME_0):
-    try:
-      result = [i for i in indices if cn.TIME_0 in i]
-    except:
-      import pdb; pdb.set_trace()
+  def _getDropIndices(self, indices,
+      drop_index=cn.TIME_0):
+    """
+    Handles dropping time index when replicas are present
+    """
+    result = []
+    for idx in indices:
+      splits = idx.split(data_provider.SEPARATOR)
+      if splits[0] == drop_index:
+        result.append(idx)
     return result
   
 
@@ -88,14 +97,15 @@ class TrinaryData(NormalizedData):
         **kwargs)
     self.df_X = transform_data.aggregateGenes(
         df=self.df_X)
-    drop_indices = self._getTimeIndices(self.df_X.index)
+    drop_indices = self._getDropIndices(self.df_X.index)
     self.df_X = self.df_X.drop(drop_indices)
     if is_dropT1:
-      t1_indices = self._getTimeIndices(self.df_X.index,
-          time_index=T1_INDEX)
+      t1_indices = self._getDropIndices(self.df_X.index,
+          drop_index=T1_INDEX)
       self.df_X = self.df_X.drop(t1_indices)
       self.ser_y = self.ser_y.drop(t1_indices)
     self.df_X.index = sorted(self.df_X.index,
         key=lambda v: float(v[1:]))
-    self.features = self.df_X.columns.tolist()
-    self.df_X.columns = range(len(self.features))
+    sorted_index = sorted(self.ser_y.index,
+        key=lambda v: float(v[1:]))
+    self.ser_y = self.ser_y[sorted_index]
