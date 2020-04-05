@@ -30,8 +30,11 @@ class NormalizedData(object):
     :param bool is_averaged: Use averaged read counts
     Public instance variables:
       df_X are normalized read counts
-      states_dict - mapping of literal to numeric values of state
       ser_y - numeric value of state corresponding to each row in df_X
+      self.state_dict:
+          key: state name
+          value: state index
+      self.features: list of names of gene
     """
     self._is_display_errors = is_display_errors
     self.provider = DataProvider(
@@ -47,7 +50,6 @@ class NormalizedData(object):
     drop_indices = self._getDropIndices(self.df_X.index)
     self.df_X = self.df_X.drop(drop_indices)
     self.features = self.df_X.columns.tolist()
-    self.df_X.columns = range(len(self.features))
     # Create class information
     ser_y = self.provider.df_stage_matrix[cn.STAGE_NAME]
     if not is_averaged:
@@ -91,7 +93,14 @@ class TrinaryData(NormalizedData):
   def __init__(self, is_dropT1=True,
       is_display_errors=True, **kwargs):
     """
-    self.df_X are trinary values
+    self.df_X
+        columns: gene index
+        index: times
+        values: trinary
+    self.ser_y
+        index: times
+        values: state index
+    self.features: list of names of gene groups
     """
     super().__init__(is_display_errors=is_display_errors,
         **kwargs)
@@ -104,8 +113,8 @@ class TrinaryData(NormalizedData):
           drop_index=T1_INDEX)
       self.df_X = self.df_X.drop(t1_indices)
       self.ser_y = self.ser_y.drop(t1_indices)
-    self.df_X.index = sorted(self.df_X.index,
-        key=lambda v: float(v[1:]))
     sorted_index = sorted(self.ser_y.index,
         key=lambda v: float(v[1:]))
     self.ser_y = self.ser_y[sorted_index]
+    self.features = self.df_X.columns.tolist()
+    self.df_X.columns = range(len(self.features))

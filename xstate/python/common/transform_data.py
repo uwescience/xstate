@@ -41,6 +41,7 @@ def aggregateGenes(df=None, provider=None):
   :param DataProvider provider: uses df_normalized
   :return pd.DataFrame: names are combined for aggregated
       genes; calculates trinary values
+      indexes are unchanged
   """
   if df is None:
     if provider is None:
@@ -48,16 +49,16 @@ def aggregateGenes(df=None, provider=None):
       provider.do()
     df = provider.df_normalized
   df_trinary = makeTrinaryData(df, is_include_nan=False)
-  dfg = df_trinary.groupby(df_trinary.columns.tolist())
+  dfg = df_trinary.T.groupby(
+      df_trinary.T.columns.tolist())
   groups = dfg.groups
   data = {}
   for key, genes in groups.items():
-    label = "--".join(genes)
+    label = "--".join(genes.values.tolist())
     data[label] = list(key)
   df = pd.DataFrame(data)
-  df_result = df.T
-  df_result.columns = df_trinary.columns
-  return df_result
+  df.index = df_trinary.index
+  return df
 
 def stripReplicaString(names):
   """
