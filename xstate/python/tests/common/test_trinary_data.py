@@ -9,6 +9,7 @@ import unittest
 
 
 IGNORE_TEST = False
+IS_PLOT = False
 NUM_REPL = 3
 
 
@@ -68,10 +69,19 @@ class TestTrinaryData(unittest.TestCase):
     for data in [data1, data2]:
       test(data.df_X, data.ser_y)
     self.assertGreater(len(data1.df_X), len(data2.df_X))
-    self.assertGreater(len(data1.df_X.columns), len(data2.df_X.columns))
+    self.assertGreater(len(data1.df_X.columns),
+        len(data2.df_X.columns))
     # Replicated data should have 3 Normoxia states
     self.assertEqual(data1.ser_y[data1.ser_y==0].count(),
           NUM_REPL)
+
+  def testPlotFeatureSignificanceByState(self):
+    if IGNORE_TEST:
+      return
+    trinary = TrinaryData(is_averaged=False,
+        is_dropT1=False)
+    trinary.plotFeatureSignificanceByState(
+        is_plot=IS_PLOT)
     
 
 if __name__ == '__main__':

@@ -12,7 +12,9 @@ import common.constants as cn
 from common.data_provider import DataProvider
 from common import data_provider
 import common.transform_data as transform_data
+from common_python.classifier import util_classifier
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
@@ -117,4 +119,34 @@ class TrinaryData(NormalizedData):
         key=lambda v: float(v[1:]))
     self.ser_y = self.ser_y[sorted_index]
     self.features = self.df_X.columns.tolist()
-    self.df_X.columns = range(len(self.features))
+    #self.df_X.columns = range(len(self.features))
+    self.df_fstat = None
+
+  def plotFeatureSignificanceByState(self,
+      max_sl=0.25, max_rank=50, is_plot=True):
+    """
+    Constructs a heatmap of F-statistic significance 
+    levels by state.
+    :param float threshold_sl: maximum significance level
+    :param int max_rank: number of genes on y-axis
+        Genes orderd by significance level across states
+    """
+    if self.df_fstat is None:
+      self.df_fstat = util_classifier.makeFstatDF(
+          self.df_X, self.ser_y)
+    threshold = -np.log10(max_sl)  # Number of zeroes
+    df_plot = self.df_fstat.applymap(
+        lambda v: np.nan if v < threshold else v)
+    df_plot = df_plot.loc[df_plot.index[
+        0:(max_rank-1)], :]
+    #plt.figure(figsize=(16, 10))
+    ax = plt.gca()
+    ax.set_xticks(np.arange(len(df_plot.columns))+0.5)
+    ax.set_xticklabels(df_plot.columns)
+    ax.set_yticks(np.arange(len(df_plot.index))+0.5)
+    ax.set_yticklabels(df_plot.index, rotation=0)
+    ax.set_xlabel("State")
+    heatmap = plt.pcolor(df_plot)
+    _ = plt.colorbar(heatmap)
+    if is_plot:
+      plt.show()
