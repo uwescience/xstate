@@ -123,7 +123,8 @@ class TrinaryData(NormalizedData):
     self.df_fstat = None
 
   def plotFeatureSignificanceByState(self,
-      max_sl=0.25, max_rank=50, is_plot=True):
+      max_sl=0.25, max_rank=50, is_plot=True,
+      figsize=(8, 6)):
     """
     Constructs a heatmap of F-statistic significance 
     levels by state.
@@ -139,7 +140,7 @@ class TrinaryData(NormalizedData):
         lambda v: np.nan if v < threshold else v)
     df_plot = df_plot.loc[df_plot.index[
         0:(max_rank-1)], :]
-    #plt.figure(figsize=(16, 10))
+    plt.figure(figsize=figsize)
     ax = plt.gca()
     ax.set_xticks(np.arange(len(df_plot.columns))+0.5)
     ax.set_xticklabels(df_plot.columns)
