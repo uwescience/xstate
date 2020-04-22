@@ -31,3 +31,7 @@ Transformed data from Eliza into a CSV with terms
 - mtb\_kegg\_gene\_pathways.csv - gene, KEGG pathway
 - mtb\_gene\_ec.csv - gene, EC number
 - mtb\_gene\_ko.csv - gene, KEGG orthology
+
+## Transcription Regulatory Networks (TRN) - April 21, 2020
+- mtb.chip.network.drem.csv : mtb.chip.network.drem without inhibit or activate
+- MTB-Signed-TRN.csv MTB protein-DNA networks (TF-gene interactions) generated using ChIP-seq and TF over-expression RNAseq data
