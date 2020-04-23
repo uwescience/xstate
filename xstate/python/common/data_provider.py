@@ -39,6 +39,10 @@ Makes Data Available in Standard Formats. Creates the following data:
   dfs_centered_adjusted_read_count - centers w.r.t. mean value of gene
      index: cn.GENE_ID
      column: time
+  df_trn_unsigned - transcription regulation network
+     column: cn.TF, cn.GENE_ID, cn.SIGN (always 1)
+  df_trn_signed - TRN with sign for activation/inhibition
+     column: cn.TF, cn.GENE_ID, cn.SIGN (1, -1)
 
 For unreplicated data, 
 time columns have headings of the form T0, T1, ...
@@ -67,6 +71,8 @@ FILENAME_EC_TERMS = "mtb_gene_ec"
 FILENAME_KO_TERMS = "mtb_gene_ec"
 FILENAME_KEGG_PATHWAYS = "mtb_kegg_pathways"
 FILENAME_KEGG_GENE_PATHWAY = "mtb_kegg_gene_pathway"
+FILENAME_TRN_UNSIGNED = "mtb.chip.network.drem"
+FILENAME_TRN_SIGNED = "MTB-Signed-TRN"
 NUM_REPL = 3
 T0 = 0
 MIN_LOG2_VALUE = -10
@@ -74,6 +80,9 @@ MIN_VALUE = 10e-5
 MILLION = 1e6
 KILOBASE = 1e3  # Thousand bases
 SEPARATOR = "."  # Separator used in time columns to indicate replication
+# Columns
+# Columns of files for transcription regulator networks
+TRN_COLUMNS = [cn.TF, cn.GENE_ID, cn.SIGN]
 
 
 ############################### CLASSES #########################
@@ -481,6 +490,13 @@ class DataProvider(object):
       self.df_kegg_gene_pathways =  \
           self._makeDFFromCSV(FILENAME_KEGG_GENE_PATHWAY,
           is_index_geneid=True)
+      # Transcription Regulation Network
+      self.df_trn_unsigned = self._makeDFFromCSV(
+          FILENAME_TRN_UNSIGNED)
+      self.df_trn_unsigned.columns = TRN_COLUMNS
+      self.df_trn_signed = self._makeDFFromCSV(
+          FILENAME_TRN_SIGNED)
+      self.df_trn_signed.columns = TRN_COLUMNS
       # GO Terms
       self.df_go_terms = self._makeGoTerms()
       # Gene expression for state

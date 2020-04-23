@@ -37,12 +37,14 @@ class TestDataProvider(unittest.TestCase):
     self.provider._dfs_centered_adjusted_read_count = [df_data for _ in range(SIZE)]
 
   def checkDF(self, df, is_check_index=True,
-      is_check_column=True, **kwargs):
+      is_check_column=True, is_check_times=False,
+      **kwargs):
     """
     Verifies DataFrames
     :param pd.DataFrame df:
     :param bool is_check_index: checks that index is GENE
     :param bool is_check_column: checks column for time format
+    :param bool is_check_times: checks the time format
     :param dict kwargs: arguments passed to checkTimes
     """
     # Non-zero length
@@ -55,13 +57,14 @@ class TestDataProvider(unittest.TestCase):
       self.assertTrue(b)
     # No nan values
     types = [np.dtype('int64'), np.dtype('float64'), np.dtype('bool')]
-    for column in df.columns:
-      ser = df[column]
-      if ser.dtype in types:
-        is_nan = np.isnan(ser.sum(skipna=False))
-        self.assertFalse(is_nan)
     if is_check_column:
-      self.checkTimes(df, **kwargs)
+      for column in df.columns:
+        ser = df[column]
+        if ser.dtype in types:
+          is_nan = np.isnan(ser.sum(skipna=False))
+          self.assertFalse(is_nan)
+    if is_check_times:
+      self.checkTimes(df.columns, **kwargs)
 
   def checkTimes(self, times, is_replicated=False):
     """
@@ -196,22 +199,27 @@ class TestDataProvider(unittest.TestCase):
     [self.checkDF(df, is_replicated=True) for df in 
         dfs_centered_adjusted_read_count]
     dfs = [
-        self.provider.df_cv,
         self.provider.df_gene_description,
         self.provider.df_mean,
         self.provider.df_std,
         self.provider.df_normalized,
         self.provider.df_gene_expression_state,
         ]
+    for idx, df in enumerate(dfs):
+      self.checkDF(df, is_check_index=False,
+          is_check_times=False)
     for idx, df in enumerate(self.concatDFS()):
-      self.checkDF(df, is_replicated=True)
+      self.checkDF(df, is_replicated=True,
+          is_check_times=True)
     dfs = [
         self.provider.df_cv,
         self.provider.df_kegg_gene_pathways, 
         self.provider.df_go_terms, 
         self.provider.df_ec_terms, 
         self.provider.df_ko_terms, 
-        self.provider.df_kegg_pathways, 
+        self.provider.df_kegg_pathways,
+        self.provider.df_trn_signed,
+        self.provider.df_trn_unsigned,
         ]
     for idx, df in enumerate(dfs):
       self.checkDF(df, is_check_index=False,
