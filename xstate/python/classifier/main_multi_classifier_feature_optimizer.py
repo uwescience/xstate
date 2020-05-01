@@ -25,7 +25,7 @@ MAX_ITER = 2500
 MIN_INCR_SCORE = 0.01
 MAX_DEGRADE = 0.01
 NUM_HOLDOUTS = 1  # Holdouts in cross validation
-NUM_CROSS_ITER = 20  # Cross validation iterations
+NUM_CROSS_ITER = 100  # Cross validation iterations
 BCFO_KWARGS = {
     "max_degrade": MAX_DEGRADE,
     "max_iter": MAX_ITER,
