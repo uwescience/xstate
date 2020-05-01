@@ -8,7 +8,8 @@ import pandas as pd
 import unittest
 
 
-IGNORE_TEST = True
+IGNORE_TEST = False
+IS_REPORT = False
 FILENAME =  "test_main_multi_classifier.pcl"
 DIR = os.path.dirname(os.path.abspath("__file__"))
 FILEPATH = os.path.join(DIR, FILENAME)
@@ -46,21 +47,27 @@ class TestFunctions(unittest.TestCase):
   def testRun(self):
     if IGNORE_TEST:
       return
-    main.run(FILEPATH, True, max_iter=1)
+    main.run(FILEPATH, True, max_iter=1,
+        is_report=False)
     persister = Persister(FILEPATH)
     self.assertTrue(persister.isExist())
-    clf1 = persister.get()
-    self.assertTrue(isinstance(clf1.ser_y_cls, pd.Series))
+    optimizer = persister.get()
+    self.assertTrue(isinstance(
+        optimizer.feature_dct, dict))
     #
-    main.run(FILEPATH, False, max_iter=1)
-    clf2 = persister.get()
-    for cls in clf1.classes:
-      self.assertTrue(clf1.selector.feature_dct[cls]
-          == clf2.selector.feature_dct[cls])
+    main.run(FILEPATH, False, max_iter=1,
+        is_report=False)
+    optimizer2 = persister.get()
+    for cls in optimizer.feature_dct.keys():
+      self.assertTrue(
+          optimizer.feature_dct[cls] ==
+          optimizer2.feature_dct[cls])
 
   def testReport(self):
-    # TESTING
-    main.run(FILEPATH, True, max_iter=1)
+    if IGNORE_TEST:
+      return
+    main.run(FILEPATH, True, max_iter=1,
+        is_report=False)
     main.report(FILEPATH)
 
 
