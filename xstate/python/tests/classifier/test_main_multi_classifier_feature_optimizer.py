@@ -15,7 +15,7 @@ FILENAME =  "test_main_multi_classifier.pcl"
 DIR = os.path.dirname(os.path.abspath("__file__"))
 FILEPATH = os.path.join(DIR, FILENAME)
 MCFO_KWARGS = {
-    "num_exclude_iter": 2
+    "num_exclude_iter": 2,
     }
 
 
@@ -64,8 +64,8 @@ class TestFunctions(unittest.TestCase):
     optimizer2 = persister.get()
     for cls in optimizer.fit_result_dct.keys():
       self.assertTrue(
-          optimizer.fit_result_dct[cls] ==
-          optimizer2.fit_result_dct[cls])
+          len(optimizer.fit_result_dct[cls]) ==
+          len(optimizer2.fit_result_dct[cls]))
 
   def testReport(self):
     if IGNORE_TEST:

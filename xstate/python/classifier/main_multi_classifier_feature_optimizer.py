@@ -4,7 +4,7 @@ MultiClassifierFeatureOptimizer is run with the
 following hyperparameters
   num_iteration: number of genes
   feature_selector: default
-  max_degrade: 0.01 (difference from using all features)
+  desired_accuracy: 0.01 (difference from using all features)
 """
 
 
@@ -24,11 +24,11 @@ PERSISTER_FILE =  \
     "main_multi_classifier_feature_optimizer.pcl"
 MAX_ITER = 5000
 MIN_INCR_SCORE = 0.01
-MAX_DEGRADE = 0.01
+DESIRED_ACCURACY = 1.0
 NUM_HOLDOUTS = 1  # Holdouts in cross validation
 NUM_CROSS_ITER = 150  # Cross validation iterations
 BCFO_KWARGS = {
-    "max_degrade": MAX_DEGRADE,
+    "desired_accuracy": DESIRED_ACCURACY,
     "max_iter": MAX_ITER,
     "num_holdouts": NUM_HOLDOUTS,
     "num_cross_iter": NUM_CROSS_ITER,
