@@ -1,6 +1,7 @@
 '''Runs MultiClassifier and reports results.'''
 """
-MultiClassifier is run with the following hyperparameters
+MultiClassifierFeatureOptimizer is run with the
+following hyperparameters
   num_iteration: number of genes
   feature_selector: default
   max_degrade: 0.01 (difference from using all features)
@@ -19,27 +20,36 @@ import argparse
 import os
 
 
-SERIALIZE_FILE =  \
+PERSISTER_FILE =  \
     "main_multi_classifier_feature_optimizer.pcl"
-MAX_ITER = 2500
+MAX_ITER = 5000
 MIN_INCR_SCORE = 0.01
 MAX_DEGRADE = 0.01
 NUM_HOLDOUTS = 1  # Holdouts in cross validation
-NUM_CROSS_ITER = 100  # Cross validation iterations
+NUM_CROSS_ITER = 150  # Cross validation iterations
 BCFO_KWARGS = {
     "max_degrade": MAX_DEGRADE,
     "max_iter": MAX_ITER,
     "num_holdouts": NUM_HOLDOUTS,
     "num_cross_iter": NUM_CROSS_ITER,
     }
+NUM_EXCLUDE_ITER = 30
 
+
+def getFitResultFromPersister(path=None):
+  """
+  Returns the dictionary of FitResult by class.
+  """
+  persister = _getPersister(path=path)
+  optimizer = persister.get()
+  return optimizer.fit_result_dct
 
 def _getPersister(path=None):
   if path is None:
-    path = _makePath(filename=SERIALIZE_FILE)
+    path = _makePath(filename=PERSISTER_FILE)
   return Persister(path)
 
-def _makePath(filename=SERIALIZE_FILE):
+def _makePath(filename=PERSISTER_FILE):
   this_dir = os.path.dirname(os.path.abspath(__file__))
   return os.path.join(this_dir, filename)
 
@@ -49,7 +59,7 @@ def _getData():
   return trinary.df_X, trinary.ser_y
 
 def run(path, is_restart, max_iter=None,
-    is_report=True):
+    mcfo_kwargs={}, is_report=True):
   """
   Runs feature selection.
   :param str path: path to pcl file
@@ -76,7 +86,7 @@ def run(path, is_restart, max_iter=None,
         feature_collection_cl=  \
         feature_collection.FeatureCollection,
         persister=persister,
-        bcfo_kwargs=bcfo_kwargs)
+        **mcfo_kwargs, bcfo_kwargs=bcfo_kwargs)
   #
   optimizer.fit(df_X, ser_y)
 
@@ -93,14 +103,19 @@ def report(path=None):
   persister = _getPersister(path)
   if persister.isExist():
     optimizer = persister.get()
-    prt("\n**Features by state:\n",
-        optimizer.feature_dct)
-    prt("\n**Scores by state:\n",
-        optimizer.score_dct)
-    prt("\n**Best scores by state:\n",
-        optimizer.best_score_dct)
+    sels_dct = {c: r[0].sels
+        for c, r in optimizer.fit_result_dct.items()}
+    prt("\n**Selected features by state:\n", sels_dct)
+    sels_score_dct = {c: r[0].sels_score
+        for c, r in optimizer.fit_result_dct.items()}
+    prt("\n**Scores for selected features by state:\n",
+        sels_score_dct)
+    all_score_dct = {c: r[0].all_score
+        for c, r in optimizer.fit_result_dct.items()}
+    prt("\n**Scores for all-features by state:\n",
+        all_score_dct)
   else:
-    print("***Serialization file not found: %s" % path)
+    print("***Persister file not found: %s" % path)
 
 
 if __name__ == '__main__':
@@ -108,7 +123,7 @@ if __name__ == '__main__':
       description="Run Feature Optimizer")
   parser.add_argument("-f", type=str,
       help="Pickle file with state",
-      default=SERIALIZE_FILE)
+      default=PERSISTER_FILE)
   parser.add_argument("--restart",
       action="store_true",
       help="Re-start the run from beginning",
@@ -122,5 +137,8 @@ if __name__ == '__main__':
   if args.only_report:
     report(path=path)
   else:
-    run(path=path, is_restart=args.restart)
+    run(path=path,
+        mcfo_kwargs=  \
+        {"num_exclude_iter": NUM_EXCLUDE_ITER},
+        is_restart=args.restart)
     report(path=path)

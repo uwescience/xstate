@@ -1,6 +1,7 @@
 import common.constants as cn
 from common_python.util.persister import Persister
-from classifier import main_multi_classifier as main
+from classifier import  \
+    main_multi_classifier_feature_optimizer as main
 
 import numpy as np
 import os
@@ -13,6 +14,9 @@ IS_REPORT = False
 FILENAME =  "test_main_multi_classifier.pcl"
 DIR = os.path.dirname(os.path.abspath("__file__"))
 FILEPATH = os.path.join(DIR, FILENAME)
+MCFO_KWARGS = {
+    "num_exclude_iter": 2
+    }
 
 
 class TestFunctions(unittest.TestCase):
@@ -48,26 +52,26 @@ class TestFunctions(unittest.TestCase):
     if IGNORE_TEST:
       return
     main.run(FILEPATH, True, max_iter=1,
-        is_report=False)
+        is_report=False, mcfo_kwargs=MCFO_KWARGS)
     persister = Persister(FILEPATH)
     self.assertTrue(persister.isExist())
     optimizer = persister.get()
     self.assertTrue(isinstance(
-        optimizer.feature_dct, dict))
+        optimizer.fit_result_dct, dict))
     #
     main.run(FILEPATH, False, max_iter=1,
-        is_report=False)
+        is_report=False, mcfo_kwargs=MCFO_KWARGS)
     optimizer2 = persister.get()
-    for cls in optimizer.feature_dct.keys():
+    for cls in optimizer.fit_result_dct.keys():
       self.assertTrue(
-          optimizer.feature_dct[cls] ==
-          optimizer2.feature_dct[cls])
+          optimizer.fit_result_dct[cls] ==
+          optimizer2.fit_result_dct[cls])
 
   def testReport(self):
     if IGNORE_TEST:
       return
     main.run(FILEPATH, True, max_iter=1,
-        is_report=False)
+        is_report=False, mcfo_kwargs=MCFO_KWARGS)
     main.report(FILEPATH)
 
 
