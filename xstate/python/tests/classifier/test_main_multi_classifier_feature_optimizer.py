@@ -1,4 +1,5 @@
 import common.constants as cn
+from common_python.testing import helpers
 from common_python.util.persister import Persister
 from classifier import  \
     main_multi_classifier_feature_optimizer as main
@@ -73,6 +74,13 @@ class TestFunctions(unittest.TestCase):
     main.run(FILEPATH, True, max_iter=1,
         is_report=False, mcfo_kwargs=MCFO_KWARGS)
     main.report(FILEPATH)
+
+  def testWriteFitResultCSV(self):
+    if IGNORE_TEST:
+      return
+    df = main.makeFitResultCSV(path=None)
+    self.assertTrue(helpers.isValidDataFrame(df,
+        cn.FIT_RESULT_COLUMNS))
 
 
 if __name__ == '__main__':

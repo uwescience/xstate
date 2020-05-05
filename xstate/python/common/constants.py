@@ -27,8 +27,7 @@ LENGTH = "Length"  # Length of gene in base pairs
 MEAN = "mean"  # average value
 PRODUCT = "PRODUCT"  # Transcript product
 SAMPLE = "sample"  # Identity of a sample
-TERM = "term"  # GO term
-TF = "tf"  # transcription factor
+SCORE = "score"
 SIGN = "sign"  # 1 or -1
 STAGE_NAME = "name"  # Name of the stage
 STAGE_COLOR = "color"  # Color for the stage
@@ -36,7 +35,12 @@ START = "Start"  # Starting position of gene
 STATE = "state"
 STRAND = "Strand"  # either "+" or "-"
 STD = "std"  # Standard deviation
+TERM = "term"  # GO term
+TF = "tf"  # transcription factor
 TIMEPOINT = "timepoint"  # time in the experiment
+FIT_RESULT_COLUMNS = [
+    STATE, INDEX, GENE_ID, SCORE, COUNT
+    ]
 
 # Paths
 

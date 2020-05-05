@@ -8,6 +8,7 @@ following hyperparameters
 """
 
 
+import common.constants as cn
 from common_python.classifier import  \
     multi_classifier_feature_optimizer as mcfo
 from common_python.types.extended_dict  \
@@ -18,10 +19,13 @@ from common.trinary_data import TrinaryData
 
 import argparse
 import os
+import pandas as pd
 
 
 PERSISTER_FILE =  \
     "main_multi_classifier_feature_optimizer.pcl"
+FIT_RESULT_PATH = os.path.join(cn.DATA_DIR,
+    "fit_result.csv")
 MAX_ITER = 5000
 MIN_INCR_SCORE = 0.01
 DESIRED_ACCURACY = 1.0
@@ -40,11 +44,11 @@ def getFitResultFromPersister(path=None):
   """
   Returns the dictionary of FitResult by class.
   """
-  persister = _getPersister(path=path)
+  persister = getPersister(path=path)
   optimizer = persister.get()
   return optimizer.fit_result_dct
 
-def _getPersister(path=None):
+def getPersister(path=None):
   if path is None:
     path = _makePath(filename=PERSISTER_FILE)
   return Persister(path)
@@ -68,7 +72,7 @@ def run(path, is_restart, max_iter=None,
   df_X, ser_y = _getData()
   if max_iter is None:
     max_iter = len(df_X.columns) 
-  persister = _getPersister(path)
+  persister = getPersister(path)
   if is_restart:
     if os.path.isfile(path):
       os.remove(path)
@@ -90,6 +94,38 @@ def run(path, is_restart, max_iter=None,
   #
   optimizer.fit(df_X, ser_y)
 
+def makeFitResultCSV(path=FIT_RESULT_PATH):
+  """
+  Writes a CSV file of the fitness results to
+  the data directory.
+  :param str path:
+      default: written to data directory
+      None: no file written
+  :return pd.DataFrame: Columns
+      STATE: expression state
+      INDEX: iteration of algorithm
+      GENE_ID: Gene
+      SCORE: cross validation score
+      COUNT: Number of gene evaluations done
+  """
+  fit_result_dct = getFitResultFromPersister()
+  result_dct = {k: [] for k in cn.FIT_RESULT_COLUMNS}
+  for state in fit_result_dct.keys():
+    for fit_result in fit_result_dct[state]:
+      for gene in fit_result.sels:
+        result_dct[cn.STATE].append(state)
+        result_dct[cn.INDEX].append(
+            fit_result.idx)
+        result_dct[cn.GENE_ID].append(gene)
+        result_dct[cn.SCORE].append(
+            fit_result.sels_score)
+        result_dct[cn.COUNT].append(
+            fit_result.n_eval)
+  df = pd.DataFrame(result_dct)
+  if path is not None:
+    df.to_csv(path, index=False)
+  return df
+
 def report(path=None):
   """
   Reports
@@ -100,7 +136,7 @@ def report(path=None):
     print("\n%s\n" % header)
     print(str(edct))
   #
-  persister = _getPersister(path)
+  persister = getPersister(path)
   if persister.isExist():
     optimizer = persister.get()
     sels_dct = {c: r[0].sels
@@ -132,13 +168,20 @@ if __name__ == '__main__':
       action="store_true",
       help="Just provide a report"
       )
+  parser.add_argument("--write_csv",
+      action="store_true",
+      help="Write a CSV file of the fitness results."
+      )
   args = parser.parse_args()
   path = _makePath(args.f)
   if args.only_report:
     report(path=path)
+  elif args.write_csv:
+    makeFitResultCSV()
   else:
     run(path=path,
         mcfo_kwargs=  \
         {"num_exclude_iter": NUM_EXCLUDE_ITER},
         is_restart=args.restart)
     report(path=path)
+    makeFitResultCSV()
