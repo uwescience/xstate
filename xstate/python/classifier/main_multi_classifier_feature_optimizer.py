@@ -95,12 +95,12 @@ def run(path, is_restart, max_iter=None,
   optimizer.fit(df_X, ser_y)
 
 def makeFitResultCSV(path=None,
-    data_path=FIT_RESULT_PATH):
+    csv_path=FIT_RESULT_PATH):
   """
   Writes a CSV file of the fitness results to
   the data directory.
   :param str path: persister path
-  :param str data_path:
+  :param str csv_path: path for writing CSV
       default: written to data directory
       None: no file written
   :return pd.DataFrame: Columns
@@ -110,7 +110,6 @@ def makeFitResultCSV(path=None,
       SCORE: cross validation score
       COUNT: Number of gene evaluations done
   """
-  # FIXME: path should be persister_path 
   fit_result_dct = getFitResultFromPersister(
       path=path)
   result_dct = {k: [] for k in cn.FIT_RESULT_COLUMNS}
@@ -126,8 +125,8 @@ def makeFitResultCSV(path=None,
         result_dct[cn.COUNT].append(
             fit_result.n_eval)
   df = pd.DataFrame(result_dct)
-  if path is not None:
-    df.to_csv(path, index=False)
+  if csv_path is not None:
+    df.to_csv(csv_path, index=False)
   return df
 
 def report(path=None):
