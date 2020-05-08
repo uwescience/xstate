@@ -102,6 +102,8 @@ class DataProvider(object):
     "df_ko_terms",
     "df_kegg_pathways",
     "df_kegg_gene_pathways",
+    "df_trn_signed",
+    "df_trn_unsigned",
     "dfs_read_count",
     "_dfs_adjusted_read_count",
     "_dfs_adjusted_read_count_wrtT0",

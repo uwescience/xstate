@@ -81,7 +81,7 @@ class TestFunctions(unittest.TestCase):
     main.run(PERSISTER_PATH, True, max_iter=1,
         is_report=False, mcfo_kwargs=MCFO_KWARGS)
     df = main.makeFitResultCSV(path=PERSISTER_PATH,
-        data_path=None)
+        csv_path=None)
     self.assertTrue(helpers.isValidDataFrame(df,
         cn.FIT_RESULT_COLUMNS))
 
