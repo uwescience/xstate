@@ -105,7 +105,7 @@ def makeFitResultCSV(path=None,
       None: no file written
   :return pd.DataFrame: Columns
       STATE: expression state
-      INDEX: iteration of algorithm
+      GROUP: index for the classification group
       GENE_ID: Gene
       SCORE: cross validation score
       COUNT: Number of gene evaluations done
@@ -117,7 +117,7 @@ def makeFitResultCSV(path=None,
     for fit_result in fit_result_dct[state]:
       for gene in fit_result.sels:
         result_dct[cn.STATE].append(state)
-        result_dct[cn.INDEX].append(
+        result_dct[cn.GROUP].append(
             fit_result.idx)
         result_dct[cn.GENE_ID].append(gene)
         result_dct[cn.SCORE].append(
