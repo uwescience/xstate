@@ -115,7 +115,7 @@ def makeFitResultCSV(path=None,
       None: no file written
   :return pd.DataFrame: Columns
       STATE: expression state
-      GROUP: index for the classification group
+      GROUP: index for the sufficient feature set
       GENE_ID: Gene
       SCORE: cross validation score
       COUNT: Number of gene evaluations done
@@ -141,7 +141,7 @@ def makeFitResultCSV(path=None,
 
 def report_progress(path=None):
   """
-  Reports progress on constructing classification groups.
+  Reports progress on constructing sufficient feature sets.
   :param bool is_restart: Start a new analysis
   """
   def prt(header, dct):
@@ -154,7 +154,7 @@ def report_progress(path=None):
     optimizer = persister.get()
     sels_len = [len(r) for 
         r in optimizer.fit_result_dct.values()]
-    prt("\n**Classification groups constructed:\n",
+    prt("\n**Sufficient feature sets constructed:\n",
         {s: len(optimizer.fit_result_dct[s])
         for s in optimizer.fit_result_dct.keys()})
     if False:
