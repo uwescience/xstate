@@ -35,3 +35,7 @@ Transformed data from Eliza into a CSV with terms
 ## Transcription Regulatory Networks (TRN) - April 21, 2020
 - mtb.chip.network.drem.csv : mtb.chip.network.drem without inhibit or activate
 - MTB-Signed-TRN.csv MTB protein-DNA networks (TF-gene interactions) generated using ChIP-seq and TF over-expression RNAseq data
+
+## Sufficient Feature Sets
+- fit\_result.xlsx contains sufficient feature sets calculated for all genes using main\_multi\_classifier\_feature\_optimizer.
+- fit\_result_tf.xlsx contains sufficient feature sets calculated for transcription factors using main\_multi\_classifier\_feature\_optimizer.

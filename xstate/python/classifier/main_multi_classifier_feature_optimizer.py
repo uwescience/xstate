@@ -38,7 +38,7 @@ BCFO_KWARGS = {
     "num_holdouts": NUM_HOLDOUTS,
     "num_cross_iter": NUM_CROSS_ITER,
     }
-NUM_EXCLUDE_ITER = 30
+NUM_CLASSIFICATION_GROUPS = 30
 IS_ONLY_TFS = True  # Only process transciption factors
 
 
@@ -139,9 +139,9 @@ def makeFitResultCSV(path=None,
     df.to_csv(csv_path, index=False)
   return df
 
-def report(path=None):
+def report_progress(path=None):
   """
-  Reports
+  Reports progress on constructing classification groups.
   :param bool is_restart: Start a new analysis
   """
   def prt(header, dct):
@@ -154,23 +154,24 @@ def report(path=None):
     optimizer = persister.get()
     sels_len = [len(r) for 
         r in optimizer.fit_result_dct.values()]
-    if all([l > 0 for l in sels_len]):
-      sels_dct = {c: r[0].sels
-          for c, r in optimizer.fit_result_dct.items()}
-      prt("\n**Selected features by state:\n", sels_dct)
-      sels_score_dct = {c: r[0].sels_score
-          for c, r in optimizer.fit_result_dct.items()}
-      prt("\n**Scores for selected features by state:\n",
-          sels_score_dct)
-      all_score_dct = {c: r[0].all_score
-          for c, r in optimizer.fit_result_dct.items()}
-      prt("\n**Scores for all-features by state:\n",
-          all_score_dct)
-      prt("\n**Number of iterations:\n",
-          {s: len(optimizer.fit_result_dct[s])
-          for s in optimizer.fit_result_dct.keys()})
-    else:
-      print("***No data has been produced.")
+    prt("\n**Classification groups constructed:\n",
+        {s: len(optimizer.fit_result_dct[s])
+        for s in optimizer.fit_result_dct.keys()})
+    if False:
+      if all([l > 0 for l in sels_len]):
+        sels_dct = {c: r[0].sels
+            for c, r in optimizer.fit_result_dct.items()}
+        prt("\n**Selected features by state:\n", sels_dct)
+        sels_score_dct = {c: r[0].sels_score
+            for c, r in optimizer.fit_result_dct.items()}
+        prt("\n**Scores for selected features by state:\n",
+            sels_score_dct)
+        all_score_dct = {c: r[0].all_score
+            for c, r in optimizer.fit_result_dct.items()}
+        prt("\n**Scores for all-features by state:\n",
+            all_score_dct)
+      else:
+        print("***No data has been produced.")
   else:
     print("***Persister file not found: %s" % path)
 
@@ -185,9 +186,9 @@ if __name__ == '__main__':
       action="store_true",
       help="Re-start the run from beginning",
       )
-  parser.add_argument("--only_report",
+  parser.add_argument("--progress",
       action="store_true",
-      help="Just provide a report"
+      help="Report run progress."
       )
   parser.add_argument("--write_csv",
       action="store_true",
@@ -195,14 +196,15 @@ if __name__ == '__main__':
       )
   args = parser.parse_args()
   path = _makePath(args.f)
-  if args.only_report:
-    report(path=path)
+  if args.progress:
+    report_progress(path=path)
   elif args.write_csv:
     makeFitResultCSV()
   else:
     run(path=path,
         mcfo_kwargs=  \
-        {"num_exclude_iter": NUM_EXCLUDE_ITER},
+        {"num_exclude_iter": 
+        NUM_CLASSIFICATION_GROUPS},
         is_restart=args.restart)
-    report(path=path)
+    report_progress(path=path)
     makeFitResultCSV()
