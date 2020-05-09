@@ -164,8 +164,10 @@ class TestDataProvider(unittest.TestCase):
     dfs.extend(self.provider.dfs_read_count)
     dfs.extend(self.provider.dfs_adjusted_read_count)
     dfs.extend(self.provider.dfs_adjusted_read_count_wrtT0)
-    dfs.extend(self.provider.dfs_adjusted_read_count_wrtT0_log2)
-    dfs.extend(self.provider.dfs_centered_adjusted_read_count)
+    dfs.extend(
+        self.provider.dfs_adjusted_read_count_wrtT0_log2)
+    dfs.extend(
+        self.provider.dfs_centered_adjusted_read_count)
     return dfs
 
   def testDo(self):
@@ -192,6 +194,9 @@ class TestDataProvider(unittest.TestCase):
         = self.provider.dfs_centered_adjusted_read_count
     testLessEqual(dfs_centered_adjusted_read_count,
         dfs_adjusted_read_count)
+    # Lists
+    self.assertTrue(isinstance(self.provider.tfs, list))
+    self.assertGreater(len(self.provider.tfs), 0)
     # Common tests
     self.assertEqual(
         len(dfs_centered_adjusted_read_count),

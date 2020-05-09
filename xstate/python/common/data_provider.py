@@ -43,6 +43,7 @@ Makes Data Available in Standard Formats. Creates the following data:
      column: cn.TF, cn.GENE_ID, cn.SIGN (always 1)
   df_trn_signed - TRN with sign for activation/inhibition
      column: cn.TF, cn.GENE_ID, cn.SIGN (1, -1)
+  tfs - list of transcription factors
 
 For unreplicated data, 
 time columns have headings of the form T0, T1, ...
@@ -109,6 +110,7 @@ class DataProvider(object):
     "_dfs_adjusted_read_count_wrtT0",
     "_dfs_adjusted_read_count_wrtT0_log2",
     "_dfs_centered_adjusted_read_count",
+    "tfs",
     ]
 
   def __init__(self, data_dir=cn.DATA_DIR,
@@ -518,4 +520,8 @@ class DataProvider(object):
       self.df_mean = self._makeMeanDF()
       self.df_std = self._makeStdDF()
       self.df_cv = 100 * self.df_std / self.df_mean
+      # Transcription factors
+      self.tfs = self.df_trn_unsigned[cn.TF].unique()
+      self.tfs = list(set(self.tfs).intersection(
+          self.dfs_adjusted_read_count[0].index))
       persister.set(self)
