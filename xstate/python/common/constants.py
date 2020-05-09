@@ -39,7 +39,7 @@ TERM = "term"  # GO term
 TF = "tf"  # transcription factor
 TIMEPOINT = "timepoint"  # time in the experiment
 FIT_RESULT_COLUMNS = [
-    STATE, INDEX, GENE_ID, SCORE, COUNT
+    STATE, GROUP, GENE_ID, SCORE, COUNT
     ]
 
 # Paths

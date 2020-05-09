@@ -71,8 +71,9 @@ class TestFunctions(unittest.TestCase):
   def testReport(self):
     if IGNORE_TEST:
       return
+    # Smoke test only
     main.run(PERSISTER_PATH, True, max_iter=1,
-        is_report=False, mcfo_kwargs=MCFO_KWARGS)
+        is_report=True, mcfo_kwargs=MCFO_KWARGS)
     main.report(PERSISTER_PATH)
 
   def testWriteFitResultCSV(self):

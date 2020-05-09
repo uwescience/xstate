@@ -9,6 +9,7 @@ following hyperparameters
 
 
 import common.constants as cn
+import common_python.constants as ccn
 from common_python.classifier import  \
     multi_classifier_feature_optimizer as mcfo
 from common_python.types.extended_dict  \
@@ -16,6 +17,7 @@ from common_python.types.extended_dict  \
 from common_python.classifier import feature_collection
 from common_python.util.persister import Persister
 from common.trinary_data import TrinaryData
+from common.data_provider import DataProvider
 
 import argparse
 import os
@@ -38,6 +40,7 @@ BCFO_KWARGS = {
     "num_cross_iter": NUM_CROSS_ITER,
     }
 NUM_EXCLUDE_ITER = 30
+IS_ONLY_TFS = True  # Only process transciption factors
 
 
 def getFitResultFromPersister(path=None):
@@ -58,9 +61,17 @@ def _makePath(filename=PERSISTER_FILE):
   return os.path.join(this_dir, filename)
 
 def _getData():
+  provider = DataProvider()
+  provider.do()
   trinary = TrinaryData(is_averaged=False,
       is_dropT1=False)
-  return trinary.df_X, trinary.ser_y
+  if IS_ONLY_TFS:
+    columns = set(trinary.df_X.columns).intersection(
+        provider.tfs)
+  else:
+    columns = trinary.df_X.columns
+  columns = list(columns)
+  return trinary.df_X[columns], trinary.ser_y
 
 def run(path, is_restart, max_iter=None,
     mcfo_kwargs={}, is_report=True):
@@ -117,7 +128,7 @@ def makeFitResultCSV(path=None,
     for fit_result in fit_result_dct[state]:
       for gene in fit_result.sels:
         result_dct[cn.STATE].append(state)
-        result_dct[cn.GROUP].append(
+        result_dct[ccn.GROUP].append(
             fit_result.idx)
         result_dct[cn.GENE_ID].append(gene)
         result_dct[cn.SCORE].append(
@@ -153,6 +164,9 @@ def report(path=None):
         for c, r in optimizer.fit_result_dct.items()}
     prt("\n**Scores for all-features by state:\n",
         all_score_dct)
+    prt("\n**Number of iterations:\n",
+        {s: len(optimizer.fit_result_dct[s])
+        for s in optimizer.fit_result_dct.keys()})
   else:
     print("***Persister file not found: %s" % path)
 
