@@ -9,7 +9,6 @@ following hyperparameters
 
 
 import common.constants as cn
-import common_python.constants as ccn
 from common_python.classifier import  \
     multi_classifier_feature_optimizer as mcfo
 from common_python.types.extended_dict  \
@@ -128,7 +127,7 @@ def makeFitResultCSV(path=None,
     for fit_result in fit_result_dct[state]:
       for gene in fit_result.sels:
         result_dct[cn.STATE].append(state)
-        result_dct[ccn.GROUP].append(
+        result_dct[cn.GROUP].append(
             fit_result.idx)
         result_dct[cn.GENE_ID].append(gene)
         result_dct[cn.SCORE].append(
