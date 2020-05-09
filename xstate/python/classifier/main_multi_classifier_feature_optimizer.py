@@ -153,20 +153,25 @@ def report(path=None):
   persister = getPersister(path)
   if persister.isExist():
     optimizer = persister.get()
-    sels_dct = {c: r[0].sels
-        for c, r in optimizer.fit_result_dct.items()}
-    prt("\n**Selected features by state:\n", sels_dct)
-    sels_score_dct = {c: r[0].sels_score
-        for c, r in optimizer.fit_result_dct.items()}
-    prt("\n**Scores for selected features by state:\n",
-        sels_score_dct)
-    all_score_dct = {c: r[0].all_score
-        for c, r in optimizer.fit_result_dct.items()}
-    prt("\n**Scores for all-features by state:\n",
-        all_score_dct)
-    prt("\n**Number of iterations:\n",
-        {s: len(optimizer.fit_result_dct[s])
-        for s in optimizer.fit_result_dct.keys()})
+    sels_len = [len(r) for 
+        r in optimizer.fit_result_dct.values()]
+    if all([l > 0 for l in sels_len]):
+      sels_dct = {c: r[0].sels
+          for c, r in optimizer.fit_result_dct.items()}
+      prt("\n**Selected features by state:\n", sels_dct)
+      sels_score_dct = {c: r[0].sels_score
+          for c, r in optimizer.fit_result_dct.items()}
+      prt("\n**Scores for selected features by state:\n",
+          sels_score_dct)
+      all_score_dct = {c: r[0].all_score
+          for c, r in optimizer.fit_result_dct.items()}
+      prt("\n**Scores for all-features by state:\n",
+          all_score_dct)
+      prt("\n**Number of iterations:\n",
+          {s: len(optimizer.fit_result_dct[s])
+          for s in optimizer.fit_result_dct.keys()})
+    else:
+      print("***No data has been produced.")
   else:
     print("***Persister file not found: %s" % path)
 

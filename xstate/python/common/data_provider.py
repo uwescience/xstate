@@ -397,10 +397,22 @@ class DataProvider(object):
     return True
 
   def _makeGoTerms(self):
-    df = self._makeDFFromCSV(FILENAME_GO_TERMS, is_index_geneid=True)
+    df = self._makeDFFromCSV(FILENAME_GO_TERMS,
+        is_index_geneid=True)
     df[cn.GO_TERM] = [v.strip() for v in df[cn.GO_TERM]]
-    df = df.sort_values(cn.GO_TERM)
-    return df
+    # Concatenate occurrences of GO terms
+    dff = df.reset_index()
+    dfg = dff.groupby(cn.GENE_ID)
+    group_dct = dict(dfg.groups)
+    term_dct = {cn.GENE_ID: [], cn.GO_TERM: []}
+    for gene_id, indices in group_dct.items():
+      terms = []
+      for term in dff.loc[indices, cn.GO_TERM]:
+        terms.append(term)
+      term_dct[cn.GENE_ID].append(gene_id)
+      term_dct[cn.GO_TERM].append("---".join(terms))
+    df_result = pd.DataFrame(term_dct)
+    return df_result
 
   @property
   def dfs_adjusted_read_count(self):
