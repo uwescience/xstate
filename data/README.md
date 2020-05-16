@@ -13,6 +13,8 @@
 
 - .doc manuscript - not completed. The sections at the end that are grayed out are probably going to be cut...I would only read what is not grayed out. I realized the methods don't include the differential expression analysis yet nor do we have the figures finalized.
 
+- description.csv - start, stop, and length of each gene
+
 ## Added gene\_expression\_state
 For each gene\_id, specifies its associated state. Data for the gene
 can be found in other files.
