@@ -32,6 +32,9 @@ OUT_BASE = os.path.join(DIR,
     "main_feature_equivalence_calculator_%d.csv")
 OUT_PATHS = [OUT_BASE % s for s in range(NUM_STATES)]
 NUM_CROSS_ITER = 150  # Cross validation iterations
+MIN_SCORE = 0.9
+CSV = "csv"
+XLSX = "xlsx"
 
 
 def getPersister(path=PERSISTER_PATH):
@@ -58,10 +61,46 @@ def _remove(path):
   if os.path.isfile(path):
     os.remove(path)
 
+def makeFitResult(state,
+    fit_result_path=FIT_RESULT_PATH,
+    min_score=MIN_SCORE):
+  """
+  Creates FitResults for a state.
+  :param int state:
+  :param str fit_result_path: Fit results
+  :return list-mcfo.FitResult:
+  """
+  ext = os.path.split(fit_result_path)
+  ext =ext[1].split(".")
+  if ext[0] == CSV:
+    df = pd.read_csv(fit_result_path)
+  elif ext[1] == XLSX:
+    df = pd.read_excel(fit_result_path)
+  else:
+    raise ValueError("Unsupported file type.")
+  # Process groups
+  dfg_dct = df.groupby([cn.STATE, cn.GROUP]).groups
+  fit_results = []
+  for key, indices in dfg_dct.items():
+    this_state, this_group = key
+    if this_state != state:
+      continue
+    sels = df.loc[indices, cn.FEATURE].tolist()
+    group = df.loc[indices[0], cn.GROUP]
+    score = df.loc[indices[0], cn.SCORE]
+    if score >= min_score:
+      fit_result = mcfo.FitResult(idx=group,
+          sels=sels, sels_score=score)
+      fit_results.append(fit_result)
+  #
+  return fit_results
+
 def run(state, persister_path=PERSISTER_PATH,
     out_path=OUT_PATH,
     fit_results=None,
-    is_restart=True, is_report=True, **kwargs):
+    is_restart=True, is_report=True,
+    min_score=MIN_SCORE,
+    **kwargs):
   """
   Runs feature selection.
   :param int state: State being analyzed
@@ -78,20 +117,21 @@ def run(state, persister_path=PERSISTER_PATH,
     _remove(persister_path)
     _remove(out_path)
   if fit_results is None:
-    fit_results =  \
-        mcfo.MultiClassifierFeatureOptimizer.makeFitResult(
-        FIT_RESULT_PATH,
-        lambda r: r["state"] == state)
-  import pdb; pdb.set_trace()
+    fit_results = makeFitResult(state,
+        fit_result_path=FIT_RESULT_PATH,
+        min_score=min_score)
+  else:
+    fit_results = [f for f in fit_results
+        if f.sels_score >= min_score]
   # Recover a previous run, if it exiss
   if persister.isExist():
     if is_report:
-      print ("\n***PCL found: %s\n" % path)
+      print ("\n***PCL found: %s\n" % persister_path)
     calculator = persister.get()
   else:
     if is_report:
       print ("\n***Creating new PCL file: %s\n"
-          % path)
+          % persister_path)
     calculator = feq.FeatureEquivalenceCalculator(
         df_X, ser_y,
         is_restart=is_restart,
