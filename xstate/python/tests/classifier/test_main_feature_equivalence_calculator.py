@@ -12,7 +12,7 @@ import pandas as pd
 import unittest
 
 
-IGNORE_TEST = True
+IGNORE_TEST = False
 IS_REPORT = False
 PERSISTER_FILE =  \
      "test_main_feature_equivalence_calculator.pcl"
@@ -20,7 +20,7 @@ DIR = os.path.dirname(os.path.abspath("__file__"))
 PERSISTER_PATH = os.path.join(DIR, PERSISTER_FILE)
 OUT_FILE =  \
      "test_main_feature_equivalence_calculator.csv"
-OUT_PATH = os.path.join(DIR, PERSISTER_FILE)
+OUT_PATH = os.path.join(DIR, OUT_FILE)
 FIT_RESULT_PATH = os.path.join(cn.DATA_DIR,
     "fit_result_tf.xlsx")
 TEST_FIT_RESULT_PATH = os.path.join(cn.DATA_DIR,
@@ -47,23 +47,36 @@ class TestFunctions(unittest.TestCase):
     df_X, ser_y = main._getData(STATE)
     self.assertTrue(isinstance(df_X, pd.DataFrame))
     self.assertTrue(isinstance(ser_y, pd.Series))
-    self.assertEqual(len(ser_y.values.unique()), 2)
+    self.assertEqual(len(ser_y.unique()), 2)
 
   def testRun(self):
-    # TESTING
+    if IGNORE_TEST:
+      return
+    def test():
+      persister = Persister(PERSISTER_PATH)
+      self.assertTrue(persister.isExist())
+      calculator = persister.get()
+      self.assertTrue(isinstance(
+          calculator.ria_dct, dict))
+      self.assertTrue(os.path.isfile(OUT_PATH))
+    #
     main.run(STATE, 
         persister_path=PERSISTER_PATH, 
+        out_path=OUT_FILE,
         is_restart=True,
-        is_report=True,
-        num_cross_iter=2,
+        is_report=IS_REPORT,
+        num_cross_iter=10,
         min_score=0.94)
-    persister = Persister(PERSISTER_PATH)
-    self.assertTrue(persister.isExist())
-    calculator = persister.get()
-    self.assertTrue(isinstance(
-        calculator.ria_dct, dict))
-    self.assertTrue(os.path.isfile(OUT_PATH))
-    import pdb; pdb.set_trace()
+    test()
+    #
+    main.run(STATE, 
+        persister_path=PERSISTER_PATH, 
+        out_path=OUT_FILE,
+        is_restart=False,
+        is_report=IS_REPORT,
+        num_cross_iter=10,
+        min_score=0.94)
+    test()
 
   def testMakeFitResults(self):
     if IGNORE_TEST:

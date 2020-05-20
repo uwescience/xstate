@@ -137,7 +137,6 @@ def run(state, persister_path=PERSISTER_PATH,
         is_restart=is_restart,
         persister=persister, **kwargs)
   # Run the calculations
-  import pdb; pdb.set_trace()
   calculator.run(fit_results)
   df = calculator.ria_dct[state]
   df[cn.STATE] = state
