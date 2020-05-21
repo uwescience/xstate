@@ -57,7 +57,7 @@ class TestFunctions(unittest.TestCase):
       self.assertTrue(persister.isExist())
       calculator = persister.get()
       self.assertTrue(isinstance(
-          calculator.ria_dct, dict))
+          calculator.df_ria, pd.DataFrame))
       self.assertTrue(os.path.isfile(OUT_PATH))
     #
     main.run(STATE, 

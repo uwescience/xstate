@@ -13,6 +13,7 @@ from common_python.util.persister import Persister
 import argparse
 import os
 import pandas as pd
+import sys
 
 
 NUM_STATES = 6
@@ -95,6 +96,10 @@ def makeFitResult(state,
   #
   return fit_results
 
+def _msg(msg, is_report):
+  if is_report:
+    print ("\n***%s\n" % msg)
+
 def run(state, persister_path=PERSISTER_PATH,
     out_path=OUT_PATH,
     fit_results=None,
@@ -123,24 +128,28 @@ def run(state, persister_path=PERSISTER_PATH,
   else:
     fit_results = [f for f in fit_results
         if f.sels_score >= min_score]
-  # Recover a previous run, if it exiss
-  if persister.isExist():
-    if is_report:
-      print ("\n***PCL found: %s\n" % persister_path)
-    calculator = persister.get()
+  if len(fit_results) == 0:
+    _msg("No FitResult for min_score=%f" % min_score,
+        is_report)
   else:
+    # Recover a previous run, if it exiss
+    if persister.isExist():
+      _msg("PCL file found: %s" % persister_path, is_report)
+      calculator = persister.get()
+    else:
+      is_restart = True  # Force creation of new persister
+      _msg("Creating new PCL file: %s" % persister_path,           is_report)
+      calculator = feq.FeatureEquivalenceCalculator(
+          df_X, ser_y,
+          is_restart=is_restart,
+          persister=persister, **kwargs)
+    # Run the calculations
+    calculator.run(fit_results)
+    df = calculator.df_ria
+    df[cn.STATE] = state
+    df.to_csv(out_path)
     if is_report:
-      print ("\n***Creating new PCL file: %s\n"
-          % persister_path)
-    calculator = feq.FeatureEquivalenceCalculator(
-        df_X, ser_y,
-        is_restart=is_restart,
-        persister=persister, **kwargs)
-  # Run the calculations
-  calculator.run(fit_results)
-  df = calculator.ria_dct[state]
-  df[cn.STATE] = state
-  df.to_csv(out_path)
+      _msg("Results are in %s" % out_path, is_report)
 
 
 if __name__ == '__main__':
@@ -149,6 +158,9 @@ if __name__ == '__main__':
   parser.add_argument("state", 
       help="Expression state to evaluate",
       type=int)
+  parser.add_argument("--min_score", 
+      help="Minimum score for selecting fit_result.",
+      type=float, default=MIN_SCORE)
   parser.add_argument("--restart",
       action="store_true",
       help="Re-start the run from beginning",
@@ -156,5 +168,6 @@ if __name__ == '__main__':
   args = parser.parse_args()
   run(args.state, 
       persister_path=PERSISTER_PATHS[args.state], 
+      min_score=args.min_score,
       out_path=OUT_PATHS[args.state],
       is_restart=args.restart, is_report=True)
