@@ -8,7 +8,7 @@ import pandas as pd
 import unittest
 
 
-IGNORE_TEST = False
+IGNORE_TEST = True
 IS_PLOT = False
 NUM_REPL = 3
 
@@ -82,6 +82,15 @@ class TestTrinaryData(unittest.TestCase):
         is_dropT1=False)
     trinary.plotFeatureSignificanceByState(
         is_plot=IS_PLOT)
+
+  def testRegulator(self):
+    # TESTING
+    trinary_full = TrinaryData(is_averaged=False,
+        is_dropT1=False, is_regulator=False)
+    trinary_regulator = TrinaryData(is_averaged=False,
+        is_dropT1=False, is_regulator=True)
+    self.assertGreater(len(trinary_full.df_X.columns),
+        len(trinary_regulator.df_X.columns))
     
 
 if __name__ == '__main__':

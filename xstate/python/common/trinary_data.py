@@ -26,10 +26,12 @@ MIN_NUM_NORMOXIA = 2  # Minimum number of normoxia states
 class NormalizedData(object):
   """ Exposes values described above. """
 
-  def __init__(self, is_display_errors=True, is_averaged=True):
+  def __init__(self, is_display_errors=True,
+      is_averaged=True, is_regulator=False):
     """
     :param bool is_display_errors: Shows errors encountered
     :param bool is_averaged: Use averaged read counts
+    :param bool is_regulator: use regulators for TRN
     Public instance variables:
       df_X are normalized read counts
       ser_y - numeric value of state corresponding to each row in df_X
@@ -51,6 +53,12 @@ class NormalizedData(object):
       self.df_X = pd.concat([df.T for df in dfs])
     drop_indices = self._getDropIndices(self.df_X.index)
     self.df_X = self.df_X.drop(drop_indices)
+    if is_regulator:
+      regulators = self.provider.df_trn_unsigned[cn.TF]
+      regulators = list(set(regulators))
+      keys = set(self.df_X.columns).intersection(
+          regulators)
+      self.df_X = self.df_X[list(keys)]
     self.features = self.df_X.columns.tolist()
     # Create class information
     ser_y = self.provider.df_stage_matrix[cn.STAGE_NAME]
