@@ -8,7 +8,7 @@ import pandas as pd
 import unittest
 
 
-IGNORE_TEST = True
+IGNORE_TEST = False
 IS_PLOT = False
 NUM_REPL = 3
 
@@ -84,7 +84,8 @@ class TestTrinaryData(unittest.TestCase):
         is_plot=IS_PLOT)
 
   def testRegulator(self):
-    # TESTING
+    if IGNORE_TEST:
+      return
     trinary_full = TrinaryData(is_averaged=False,
         is_dropT1=False, is_regulator=False)
     trinary_regulator = TrinaryData(is_averaged=False,
