@@ -18,6 +18,9 @@ OUT_PATH_PAT = os.path.join(DIR,
 NUM_CROSS_ITER = 150  # Cross validation iterations
 CLF = svm.LinearSVC()
 REPORT_INTERVAL = 25  # Computations between reports
+ANALYZE_METRICS = [feature_analyzer.SFA,
+    feature_analyzer.CPC, feature_analyzer.IPA]
+ANALYZE_METRICS = [feature_analyzer.IPA]
 
 
 def _getData(state, columns=None):
@@ -60,6 +63,8 @@ def run(state, out_path_pat=OUT_PATH_PAT, is_report=True,
   #
   def analyze(metric):
     path = out_path_pat % (metric, state)
+    if not metric in ANALYZE_METRICS:
+      return
     if metric == feature_analyzer.SFA:
       result = analyzer.ser_sfa
     elif metric == feature_analyzer.CPC:
