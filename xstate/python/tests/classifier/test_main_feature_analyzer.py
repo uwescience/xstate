@@ -1,5 +1,6 @@
 import common.constants as cn
 from common_python.testing import helpers
+from common_python.classifier import feature_analyzer
 import classifier.main_feature_analyzer as main
 
 import numpy as np
@@ -24,7 +25,7 @@ FEATURES = [FEATURE1, FEATURE2]
 class TestFunctions(unittest.TestCase):
 
   def _remove(self):
-    for metric in main.METRICS:
+    for metric in feature_analyzer.METRICS:
       path = TEST_OUT_PATH_PAT  % (metric, STATE)
       if os.path.exists(path):
         os.remove(path)
@@ -51,7 +52,7 @@ class TestFunctions(unittest.TestCase):
         is_report=IS_REPORT,
         columns=FEATURES,
         num_cross_iter=2)
-    for metric in main.METRICS:
+    for metric in feature_analyzer.METRICS:
       self.assertTrue(os.path.isfile(
           TEST_OUT_PATH_PAT % (metric, STATE)))
 

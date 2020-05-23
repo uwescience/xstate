@@ -13,14 +13,11 @@ from sklearn import svm
 NUM_STATES = 6
 DIR = os.path.dirname(os.path.abspath(__file__))
 # Metrics calculated
-SFA = "sfa"
-CPC = "cpc"
-IPA = "ipa"
-METRICS = [SFA, CPC, IPA]
 OUT_PATH_PAT = os.path.join(DIR,
-    "main_feature_analyzer_%s_%d")
+    "main_feature_analyzer_%s_%d.csv")
 NUM_CROSS_ITER = 150  # Cross validation iterations
 CLF = svm.LinearSVC()
+REPORT_INTERVAL = 25  # Computations between reports
 
 
 def _getData(state, columns=None):
@@ -61,16 +58,16 @@ def run(state, out_path_pat=OUT_PATH_PAT, is_report=True,
   analyzer = feature_analyzer.FeatureAnalyzer(
       CLF, df_X, ser_y, **kwargs)
   FUNCTION_DCT = {
-      SFA: analyzer.ser_sfa.to_csv,
-      CPC: analyzer.df_cpc.to_csv,
-      IPA: analyzer.df_ipa.to_csv,
+      feature_analyzer.SFA: analyzer.ser_sfa.to_csv,
+      feature_analyzer.CPC: analyzer.df_cpc.to_csv,
+      feature_analyzer.IPA: analyzer.df_ipa.to_csv,
       }
   def analyze(metric):
     path = out_path_pat % (metric, state)
-    FUNCTION_DCT[metric](path)
+    _ = FUNCTION_DCT[metric](path)
     _msg(metric, state, is_report)
   # Process
-  for metric in METRICS:
+  for metric in feature_analyzer.METRICS:
     analyze(metric)
 
 
@@ -81,4 +78,5 @@ if __name__ == '__main__':
       help="Expression state to evaluate",
       type=int)
   args = parser.parse_args()
-  run(args.state, num_cross_iter=NUM_CROSS_ITER)
+  run(args.state, num_cross_iter=NUM_CROSS_ITER,
+      report_interval=REPORT_INTERVAL)
