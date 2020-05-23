@@ -57,14 +57,16 @@ def run(state, out_path_pat=OUT_PATH_PAT, is_report=True,
   df_X, ser_y = _getData(state, columns)
   analyzer = feature_analyzer.FeatureAnalyzer(
       CLF, df_X, ser_y, **kwargs)
-  FUNCTION_DCT = {
-      feature_analyzer.SFA: analyzer.ser_sfa.to_csv,
-      feature_analyzer.CPC: analyzer.df_cpc.to_csv,
-      feature_analyzer.IPA: analyzer.df_ipa.to_csv,
-      }
+  #
   def analyze(metric):
     path = out_path_pat % (metric, state)
-    _ = FUNCTION_DCT[metric](path)
+    if metric == feature_analyzer.SFA:
+      result = analyzer.ser_sfa
+    elif metric == feature_analyzer.CPC:
+      result = analyzer.df_cpc
+    elif metric == feature_analyzer.IPA:
+      result = analyzer.df_ipa
+    result.to_csv(path)
     _msg(metric, state, is_report)
   # Process
   for metric in feature_analyzer.METRICS:
