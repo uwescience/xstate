@@ -3,6 +3,8 @@ __pycache__/
 *.py[cod]
 *$py.class
 *.swp
+data_provider.pcl
+
 
 # C extensions
 *.so

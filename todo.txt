@@ -1,0 +1,28 @@
+1. feature_analyzer creates feature sets of size n
+2. feature_set_analyzer
+   a. test makeNonIntersectingSets
+   b. plot feature set accuracies
+3. Update multi_classifier.py and tests
+  -- ensemble of features
+  -- ensemble of instance holdouts
+4. Feature set value plot
+   a. Indicates the trinary value of each feature in
+      a feature set. The value is the sign of
+      of the parameter, with 0 for small values.
+  b. Structure
+     x - feature set
+     y - number of features in the set
+     color of each bar in stack
+       blue: -1
+       grey: 0
+       red:  1
+5. Feature set difference plot. (Diagnostic)
+  a. Evaluates an instance of a trinary feature vector
+     for a binary classifier
+  b. Structure
+     x - feature set
+     y - number of features in the set
+     color of each bar in stack
+       blue: same trinary value in classifier & sample
+       grey: differs by 1
+       red: differs by 2
