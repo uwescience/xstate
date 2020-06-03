@@ -1,12 +1,10 @@
 '''Runs FeatureAnalyzer for one class.'''
 
 
-import common.constants as cn
 from common.trinary_data import TrinaryData
 from common_python.classifier import feature_analyzer
 import argparse
 import os
-import pandas as pd
 from sklearn import svm
 
 
@@ -55,7 +53,7 @@ def run(state, out_path_pat=OUT_PATH_PAT, is_report=True,
   :param dict kwargs: optional arguments for
        FeatureAnalyzer
   :param list-str columns: columns of df_X to use
-  """ 
+  """
   # Initializations
   df_X, ser_y = _getData(state, columns)
   analyzer = feature_analyzer.FeatureAnalyzer(
@@ -81,7 +79,7 @@ def run(state, out_path_pat=OUT_PATH_PAT, is_report=True,
 if __name__ == '__main__':
   msg = "Run FeatureAnalyzer for state."
   parser = argparse.ArgumentParser(description=msg)
-  parser.add_argument("state", 
+  parser.add_argument("state",
       help="Expression state to evaluate",
       type=int)
   args = parser.parse_args()
