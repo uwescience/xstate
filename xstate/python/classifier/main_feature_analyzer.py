@@ -19,6 +19,9 @@ REPORT_INTERVAL = 25  # Computations between reports
 ANALYZE_METRICS = [feature_analyzer.SFA,
     feature_analyzer.CPC, feature_analyzer.IPA]
 ANALYZE_METRICS = [feature_analyzer.IPA]
+PERSISTER_PATH_PAT = os.path.join(DIR,
+    "persister_%d.pcl")
+IS_RESTART = True
 
 
 def _getData(state, columns=None):
@@ -38,7 +41,7 @@ def _getData(state, columns=None):
   return df_X, ser_y
 
 def run(state, out_dir_pat=OUT_PATH_DIR_PAT,
-    columns=None, **kwargs):
+    columns=None, is_restart=IS_RESTART, **kwargs):
   """
   Runs feature selection.
   :param int state: State being analyzed
@@ -51,7 +54,9 @@ def run(state, out_dir_pat=OUT_PATH_DIR_PAT,
   analyzer = feature_analyzer.FeatureAnalyzer(
       CLF, df_X, ser_y, **kwargs)
   out_dir = out_dir_pat  % state
-  analyzer.serialize(out_dir)
+  _ = analyzer.serialize(out_dir,
+      persister_path=PERSISTER_PATH_PAT % state,
+      is_restart=is_restart)
 
 
 if __name__ == '__main__':
@@ -60,6 +65,12 @@ if __name__ == '__main__':
   parser.add_argument("state",
       help="Expression state to evaluate",
       type=int)
+  parser.add_argument("--restart",
+      action="store_true",
+      help="Re-start the run from beginning",
+      default=True,
+      )
   args = parser.parse_args()
   run(args.state, num_cross_iter=NUM_CROSS_ITER,
+      is_restart=args.restart,
       report_interval=REPORT_INTERVAL)
