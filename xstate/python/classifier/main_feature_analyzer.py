@@ -11,9 +11,9 @@ from sklearn import svm
 NUM_STATES = 6
 DIR = os.path.dirname(os.path.abspath(__file__))
 # Metrics calculated
-OUT_PATH_PAT = os.path.join(DIR,
-    "main_feature_analyzer_%s_%d.csv")
-NUM_CROSS_ITER = 150  # Cross validation iterations
+OUT_PATH_DIR_PAT = os.path.join(DIR,
+    "feature_analyzer_%d")
+NUM_CROSS_ITER = 300  # Cross validation iterations
 CLF = svm.LinearSVC()
 REPORT_INTERVAL = 25  # Computations between reports
 ANALYZE_METRICS = [feature_analyzer.SFA,
@@ -37,19 +37,11 @@ def _getData(state, columns=None):
     df_X = trinary.df_X[columns].copy()
   return df_X, ser_y
 
-def _msg(metric, state, is_report):
-  if is_report:
-    print ("\n***Completed metric %s for state %d\n" %
-        (metric, state))
-
-def run(state, out_path_pat=OUT_PATH_PAT, is_report=True,
+def run(state, out_dir_pat=OUT_PATH_DIR_PAT,
     columns=None, **kwargs):
   """
   Runs feature selection.
   :param int state: State being analyzed
-  :param Pattern out_path_path: pattern for output files
-      _%s: metric
-      _%d: state
   :param dict kwargs: optional arguments for
        FeatureAnalyzer
   :param list-str columns: columns of df_X to use
@@ -58,22 +50,8 @@ def run(state, out_path_pat=OUT_PATH_PAT, is_report=True,
   df_X, ser_y = _getData(state, columns)
   analyzer = feature_analyzer.FeatureAnalyzer(
       CLF, df_X, ser_y, **kwargs)
-  #
-  def analyze(metric):
-    path = out_path_pat % (metric, state)
-    if not metric in ANALYZE_METRICS:
-      return
-    if metric == feature_analyzer.SFA:
-      result = analyzer.ser_sfa
-    elif metric == feature_analyzer.CPC:
-      result = analyzer.df_cpc
-    elif metric == feature_analyzer.IPA:
-      result = analyzer.df_ipa
-    result.to_csv(path)
-    _msg(metric, state, is_report)
-  # Process
-  for metric in feature_analyzer.METRICS:
-    analyze(metric)
+  out_dir = out_dir_pat  % state
+  analyzer.serialize(out_dir)
 
 
 if __name__ == '__main__':

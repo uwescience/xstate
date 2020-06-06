@@ -6,6 +6,7 @@ import classifier.main_feature_analyzer as main
 import numpy as np
 import os
 import pandas as pd
+import shutil
 import unittest
 
 
@@ -13,10 +14,9 @@ IGNORE_TEST = False
 IS_REPORT = False
 DIR = os.path.dirname(os.path.abspath("__file__"))
 STATE = 1
-TEST_OUT_PATH_PAT = {}
 # Create output paths with a variable for state
-TEST_OUT_PATH_PAT = os.path.join(DIR,
-    "test_main_feature_analyzer_%s_%d.csv")
+TEST_OUT_DIR_PAT = os.path.join(DIR,
+    "test_main_feature_analyzer_%d")
 FEATURE1 = "Rv0158"
 FEATURE2 = "Rv1460"
 FEATURES = [FEATURE1, FEATURE2]
@@ -26,9 +26,9 @@ class TestFunctions(unittest.TestCase):
 
   def _remove(self):
     for metric in feature_analyzer.METRICS:
-      path = TEST_OUT_PATH_PAT  % (metric, STATE)
-      if os.path.exists(path):
-        os.remove(path)
+      path = TEST_OUT_DIR_PAT  % STATE
+      if os.path.isdir(path):
+        shutil.rmtree(path)
 
   def setUp(self):
     self._remove()
@@ -48,13 +48,12 @@ class TestFunctions(unittest.TestCase):
     if IGNORE_TEST:
       return
     #
-    main.run(STATE, out_path_pat=TEST_OUT_PATH_PAT,
-        is_report=IS_REPORT,
-        columns=FEATURES,
-        num_cross_iter=2)
+    main.run(STATE, out_dir_pat=TEST_OUT_DIR_PAT,
+        columns=FEATURES, num_cross_iter=2)
     for metric in feature_analyzer.METRICS:
-      self.assertTrue(os.path.isfile(
-          TEST_OUT_PATH_PAT % (metric, STATE)))
+      path = os.path.join(TEST_OUT_DIR_PAT % STATE,
+          "%s.csv" % metric)
+      self.assertTrue(os.path.isfile(path))
 
 
 if __name__ == '__main__':
