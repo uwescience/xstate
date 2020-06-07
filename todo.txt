@@ -1,3 +1,4 @@
+0.1 Bug in creation of binary fsets. Fix?
 1. feature_analyzer creates feature sets of size n
 2. feature_set_analyzer
    a. test makeNonIntersectingSets
