@@ -38,6 +38,7 @@ class TermMatrix(object):
     self.grouper.do(min_size=1)
     self.df_matrix = self._makeMatrix(term_column)
     self.df_gene_term = self._makeGeneTerm()
+    import pdb; pdb.set_trace()
 
   def _makeTermGroup(self, term_column=cn.GO_TERM):
     """
