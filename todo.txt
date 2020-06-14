@@ -1,8 +1,9 @@
-0.1 Bug in creation of binary fsets. Fix?
-1. feature_analyzer creates feature sets of size n
-2. feature_set_analyzer
-   a. test makeNonIntersectingSets
-   b. plot feature set accuracies
+1. FeatureSetVector
+   a. Assigns a value to each feature organized by
+      FeatureSet. dataframe representation
+   b. Can do XOR operation between FSV to calc distance
+      (calculate abs of difference for same feature, cls)
+   c. Plot for different classes.
 3. Update multi_classifier.py and tests
   -- ensemble of features
   -- ensemble of instance holdouts
