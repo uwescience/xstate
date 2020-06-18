@@ -1,3 +1,8 @@
+
+0. COnstruct truth tables for classification expressions
+along with occurrences counts that comply and dont.
+
+
 1. FeatureSetVector
    a. Assigns a value to each feature organized by
       FeatureSet. dataframe representation
