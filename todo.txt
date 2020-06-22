@@ -1,6 +1,7 @@
-
-0. COnstruct truth tables for classification expressions
+0. FeatureSet.evaluate
+1. FeatureSetCollection.plotEvaluate. bar height - 2 log10 (SL); xaxis - FeatureSet
 along with occurrences counts that comply and dont.
+2. Why are there inconsistent results for ser_comb?
 
 
 1. FeatureSetVector
