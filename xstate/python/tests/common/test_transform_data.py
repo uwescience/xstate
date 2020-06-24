@@ -10,7 +10,7 @@ import pandas as pd
 import unittest
 
 
-IGNORE_TEST = False
+IGNORE_TEST = True
 
 
 class TestFunctions(unittest.TestCase):
@@ -42,8 +42,7 @@ class TestFunctions(unittest.TestCase):
         provider.df_normalized.columns))
 
   def testTrinaryReadsDF1(self):
-    if IGNORE_TEST:
-      return
+    # TESTING
     provider = DataProvider()
     provider.do()
     df = provider.dfs_read_count[0]
