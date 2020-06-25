@@ -14,12 +14,67 @@ from common import data_provider
 import common.transform_data as transform_data
 from common_python.classifier import util_classifier
 
+import collections
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
 T1_INDEX = "T1"
 MIN_NUM_NORMOXIA = 2  # Minimum number of normoxia states
+FILE_GALAGAN = "galagan_raw_hypoxia_ts.csv" 
+FILE_AM_MDM = "AM_MDM_Mtb_transcripts_DEseq.csv"
+FILE_AW = "AW_plus_v_AW_neg_Mtb_transcripts_DEseq.csv"
+
+
+SampleData = collections.namedtuple("SampleData",
+    "AM_MDM AW galagan")
+
+
+################## FUNCTIONS ###############
+def _subsetToRegulators(df_X):
+  provider = DataProvider()
+  provider.do()
+  regulators = provider.df_trn_unsigned[cn.TF]
+  regulators = list(set(regulators))
+  keys = set(df_X.columns).intersection(
+      regulators)
+  return df_X[list(keys)]
+
+def getSampleData(is_regulator=True,
+    is_display_errors=False):
+  """
+  Data for single conditions.
+  :param bool is_regulator: use regulators for TRN
+  :return SampleData. Each element is pd.DataFrame:
+      columns: feature
+      index: condition
+      values: trinary
+  """
+  df_AM_MDM = transform_data.trinaryReadsDF(
+      is_display_errors=is_display_errors,
+      csv_file=FILE_AM_MDM,
+      is_time_columns=False).T
+  if is_regulator:
+    df_AM_MDM = _subsetToRegulators(df_AM_MDM)
+  #
+  df_AW = transform_data.trinaryReadsDF(
+      csv_file=FILE_AW,
+      is_display_errors=is_display_errors,
+      is_time_columns=False).T
+  if is_regulator:
+    df_AW = _subsetToRegulators(df_AW)
+  #
+  df_galagan = transform_data.trinaryReadsDF(
+      csv_file=FILE_GALAGAN,
+      is_display_errors=is_display_errors,
+      is_time_columns=False).T
+  if is_regulator:
+    df_galagan = _subsetToRegulators(df_galagan)
+  #
+  return SampleData(
+      AM_MDM=df_AM_MDM,
+      AW=df_AW,
+      galagan=df_galagan)
 
 
 ################## CLASSES ###############
@@ -54,11 +109,7 @@ class NormalizedData(object):
     drop_indices = self._getDropIndices(self.df_X.index)
     self.df_X = self.df_X.drop(drop_indices)
     if is_regulator:
-      regulators = self.provider.df_trn_unsigned[cn.TF]
-      regulators = list(set(regulators))
-      keys = set(self.df_X.columns).intersection(
-          regulators)
-      self.df_X = self.df_X[list(keys)]
+      self.df_X = _subsetToRegulators(self.df_X)
     self.features = self.df_X.columns.tolist()
     # Create class information
     ser_y = self.provider.df_stage_matrix[cn.STAGE_NAME]

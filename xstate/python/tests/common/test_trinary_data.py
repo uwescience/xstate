@@ -1,5 +1,6 @@
 import common.constants as cn
 from common.trinary_data import TrinaryData, NormalizedData
+from common import trinary_data
 from common_python.testing import helpers
 
 import numpy as np
@@ -92,6 +93,33 @@ class TestTrinaryData(unittest.TestCase):
         is_dropT1=False, is_regulator=True)
     self.assertGreater(len(trinary_full.df_X.columns),
         len(trinary_regulator.df_X.columns))
+
+  def testGetSampleData(self):
+    if IGNORE_TEST:
+      return
+    def getDFS(sample):
+      return [sample.AW, sample.AM_MDM, sample.galagan]
+    #
+    def test_single(is_regulator=False):
+      sample = trinary_data.getSampleData(
+          is_display_errors=False,
+          is_regulator=is_regulator)
+      for df in getDFS(sample):
+        self.assertTrue(helpers.isValidDataFrame(df,
+            df.columns))
+      return sample
+    #
+    def test_greater(sample_large, sample_small):
+      dfs_large = getDFS(sample_large)
+      dfs_small = getDFS(sample_small)
+      for idx in range(len(dfs_large)):
+        self.assertGreater(
+            len(dfs_large[idx].columns),
+            len(dfs_small[idx].columns))
+    #
+    sample_reg = test_single(is_regulator=True)
+    sample_full = test_single(is_regulator=False)
+    test_greater(sample_full, sample_reg)
     
 
 if __name__ == '__main__':
