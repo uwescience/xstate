@@ -4,7 +4,7 @@
 2. Want visibility as to the data used in decision making
 3. Key terms
    1. Feature set
-   2. Case
+   2. Casex
 
 ## Approach
 1. Find cases
@@ -18,6 +18,9 @@
 
 ## Considerations
 1. Bogus cases. With a large number of features and small number of instances, can have cases with high significance level due to chance.
-   1. Consider $m$ instances, $n$ features, $c$ class instances.
-   2. Assume only have over expression or no differential expression. 0.5 probability of each.
-   3. Probability of a random feature vector matching a positive a single case is $c(0.5^n)(1-0.5^n)^{m-1}$.
+   1. Consider $N_I$ instances of which $N_C$ are the positive class, $N_F$ features, $p$ the probability of two feature values matching.
+   2. The probability that all features match the feature vector is $q = p^{N_C}$.
+   3. Consider the probability that at least one of the instances of the positive class matches the feature vector and no negative class matches the feature vector. This would result in a significance level of 0.
+      1. The probability of at least one of the positive class instances matching is $1 - (1 - q)^{N_C}$.
+      2. The probability of also having no negative instance matching is $P = [1 - (1 - q)^{N_C}](1-q)^{N_I-N_C} = (1 -q)^{N_I}[1 - (1-q)^{N_C}]$.
+      3. As $N_F$ gets large, $q \rightarrow 0$
