@@ -94,6 +94,14 @@ class TestTrinaryData(unittest.TestCase):
     self.assertGreater(len(trinary_full.df_X.columns),
         len(trinary_regulator.df_X.columns))
 
+  def testGetGalaganData(self):
+    if IGNORE_TEST:
+      return
+    df = trinary_data._getGalaganData(False)
+    trues = ["Rv" in c for c in df.columns]
+    self.assertTrue(helpers.isValidDataFrame(df,
+        df.columns))
+
   def testGetSampleData(self):
     if IGNORE_TEST:
       return

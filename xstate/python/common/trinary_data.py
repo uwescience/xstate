@@ -43,7 +43,7 @@ def _subsetToRegulators(df_X):
 def getSampleData(is_regulator=True,
     is_display_errors=False):
   """
-  Data for single conditions.
+  Acquires data obtain from other soruces.
   :param bool is_regulator: use regulators for TRN
   :return SampleData. Each element is pd.DataFrame:
       columns: feature
@@ -64,10 +64,8 @@ def getSampleData(is_regulator=True,
   if is_regulator:
     df_AW = _subsetToRegulators(df_AW)
   #
-  df_galagan = transform_data.trinaryReadsDF(
-      csv_file=FILE_GALAGAN,
-      is_display_errors=is_display_errors,
-      is_time_columns=False).T
+  df_galagan = _getGalaganData(
+      is_display_errors=is_display_errors)
   if is_regulator:
     df_galagan = _subsetToRegulators(df_galagan)
   #
@@ -75,6 +73,34 @@ def getSampleData(is_regulator=True,
       AM_MDM=df_AM_MDM,
       AW=df_AW,
       galagan=df_galagan)
+
+def _getGalaganData(is_display_errors=False):
+  """
+  Constructs trinary values for Galagan data.
+  These data are normalized and in log2 units.
+  The 10h data are Normoxia.
+  :return pd.DataFrame:
+      columns: genes
+      index: time instances
+      values: trinary based on log2
+  """
+  df_galagan = transform_data.readGeneCSV(
+      csv_file=FILE_GALAGAN)
+  dfs = []
+  for idx in range(1, 4):
+    stg = "rep%d" % idx
+    columns = [c for c in df_galagan.columns
+        if stg in c]
+    col_ref = columns[0]
+    columns.remove(col_ref)
+    df = df_galagan[columns].copy()
+    df = df.apply(lambda c: c - df_galagan[col_ref])
+    dfs.append(df)
+  df_merge = pd.concat(dfs, axis=1)
+  df_trinary = df_merge.applymap(lambda v:
+    1 if v >= 1 else -1 if v <= -1 else 0)
+  return df_trinary.T
+  
 
 
 ################## CLASSES ###############

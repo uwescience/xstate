@@ -72,9 +72,24 @@ def stripReplicaString(names):
     new_names.append(splits[0])
   return new_names
 
+def readGeneCSV(csv_file, csv_dir=cn.SAMPLES_DIR):
+  """
+  Reads a CSV file with the column cn.GENE_ID
+  :param str csv_file: File in "samples" directory.
+      columns are: "GENE_ID", instance ids
+  :param str csv_dir: directory where csv file is found
+  :return pd.DataFrame:
+      index: cn.GENE_ID
+  """
+  path = os.path.join(csv_dir, csv_file)
+  df = pd.read_csv(path)
+  df.index = df[cn.GENE_ID]
+  del df[cn.GENE_ID]
+  return df
+
 def trinaryReadsDF(csv_file=None, df_sample=None,
     csv_dir=cn.SAMPLES_DIR, is_display_errors=True,
-    is_time_columns=True):
+    is_time_columns=True, col_ref=None):
   """
   Creates trinary values for read counts w.r.t. data provider.
   (a) adjusting for gene length, (b) library size,
@@ -86,28 +101,31 @@ def trinaryReadsDF(csv_file=None, df_sample=None,
   :param pd.DataFrame df_sample: columns are genes,
       index are instances, values are raw readcounts
   :param str csv_dir: directory where csv file is found
+  :param str ref_col: column to use as reference in
+      normalization
   :return pd.DataFrame: columns are genes, 
       indexes are instances, trinary values
-  At least one of df_sample and csv_file must be non-null
+  Exactly one of df_sample and csv_file must be non-null
   """
   provider = DataProvider(
       is_display_errors=is_display_errors)
   provider.do()
   if df_sample is None:
-    path = os.path.join(csv_dir, csv_file)
-    df_sample = pd.read_csv(path)
-    df_sample.index = df_sample['GENE_ID']
-    del df_sample['GENE_ID']
+    df_sample = readGeneCSV(csv_file, csv_dir=csv_dir)
   #
   df_normalized = provider.normalizeReadsDF(df_sample,
       is_time_columns=is_time_columns)
   # Compute trinary values relative to original reads
-  dfs = copy.deepcopy(provider.dfs_adjusted_read_count)
-  for df in dfs:
-    df.columns = stripReplicaString(df.columns)
-  df_ref = sum(dfs) / len(provider.dfs_adjusted_read_count)
-  col_name = provider.getT0s(df_ref)[0]
-  ser_ref = df_ref[col_name]
+  if col_ref is None:
+    dfs = copy.deepcopy(provider.dfs_adjusted_read_count)
+    for df in dfs:
+      df.columns = stripReplicaString(df.columns)
+    df_ref = sum(dfs) / len(provider.dfs_adjusted_read_count)
+    col_name = provider.getT0s(df_ref)[0]
+    ser_ref = df_ref[col_name]
+  else:
+    ser_ref = df_normalized[col_ref]
+    del df_normalized[col_ref]
   return calcTrinaryComparison(df_normalized, ser_ref=ser_ref)
 
 def calcTrinaryComparison(df, ser_ref=None, threshold=1, is_convert_log2=True):

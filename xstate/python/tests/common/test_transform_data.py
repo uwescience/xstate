@@ -10,7 +10,8 @@ import pandas as pd
 import unittest
 
 
-IGNORE_TEST = True
+IGNORE_TEST = False
+IS_PLOT = False
 
 
 class TestFunctions(unittest.TestCase):
@@ -42,7 +43,8 @@ class TestFunctions(unittest.TestCase):
         provider.df_normalized.columns))
 
   def testTrinaryReadsDF1(self):
-    # TESTING
+    if IGNORE_TEST:
+      return
     provider = DataProvider()
     provider.do()
     df = provider.dfs_read_count[0]
