@@ -1,20 +1,23 @@
-# Case-Based Classification of Expression State
+# Classification of Gene Expression State Using Case Distributions
 ## Motivation
 1. More reliable to do interpolation than extrapolation
 2. Want visibility as to the data used in decision making
+3. Key terms
+   1. Feature set
+   2. Case
 
 ## Approach
-1. Separate classifier for each state.
-2. Feature selection based on accuracy achieved from classification
-3. Use trinary valued features
-4. Rank feature sets for each classifier
-5. For each feature set, calculate the following for each combination of trinary valued features:
-   1. Number of positive cases
-   2. Prob of at least that many positive cases if 0.5 probability of class given the assignment of trinary values to features.
-   3. Prob of fewer than this many negative cases under the same conditions.
-1. Classifying a new feature vector
-   1. For each binary classifier
-      1. For each feature set
-         1. Find significance level for positive and negative cases
-      1. Aggregate significance levels for positive and negative class
-   1. Report significance levels by classifier
+1. Find cases
+   1. Find feature sets with disjoint features (so have disjoint cases)
+   2. Select cases with high significance levels
+1. evaluate(feature_vector)
+   1. for each state
+      1. Find the significance levels for all applicable cases
+      1. Plot distribution
+   1. Choose state with mass of distribution at higher significance levels
+
+## Considerations
+1. Bogus cases. With a large number of features and small number of instances, can have cases with high significance level due to chance.
+   1. Consider $m$ instances, $n$ features, $c$ class instances.
+   2. Assume only have over expression or no differential expression. 0.5 probability of each.
+   3. Probability of a random feature vector matching a positive a single case is $c(0.5^n)(1-0.5^n)^{m-1}$.
