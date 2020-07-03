@@ -1,10 +1,18 @@
-# Classification of Gene Expression State Using Case Distributions
+# Classification Constructed Cases is a Robust Way to Identify Hypoxia in Expression Data for Mycobacterium Tuberculosis
 ## Motivation
-1. More reliable to do interpolation than extrapolation
-2. Want visibility as to the data used in decision making
-3. Key terms
-   1. Feature set
-   2. Casex
+1. Use of classification of expression state
+   1. Reproduced experimental conditions
+   2. Assess treatments intended to drive pathogen into a desired state
+   3. Compare data from different sources
+1. By robust, we mean: generalizable, accurate, indicate when don't know.
+1. Features that increase robustness:
+   1. interpolation than extrapolation
+   2. Know which data are used so can evaluate the reliability of those data (e.g., document when used and outcomes)
+   3. Augment machine automation with human insight by judgements (e.g., choice of gene combinations used to draw conclusions).
+
+## Key Concepts
+1. Feature set
+2. Case
 
 ## Approach
 1. Find cases
