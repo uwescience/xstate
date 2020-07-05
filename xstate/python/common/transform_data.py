@@ -54,7 +54,7 @@ def aggregateGenes(df=None, provider=None):
   groups = dfg.groups
   data = {}
   for key, genes in groups.items():
-    label = "--".join(genes.values.tolist())
+    label = cn.GENE_SEPARATOR.join(genes.values.tolist())
     data[label] = list(key)
   df = pd.DataFrame(data)
   df.index = df_trinary.index

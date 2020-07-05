@@ -63,3 +63,4 @@ ENSEMBLE_PATH = os.path.join(DATA_DIR, "ensemble.pcl")
 NUM_TIMES = 26
 STATE_NORMOXIA = "Normoxia"
 STATE_RESCUSCITATION = "Resuscitation"
+GENE_SEPARATOR = "--"
