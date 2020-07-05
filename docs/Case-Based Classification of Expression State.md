@@ -1,10 +1,21 @@
-# Classification of Gene Expression State Using Case Distributions
+# Classification Constructed Cases is a Robust Way to Identify Hypoxia in Expression Data for Mycobacterium Tuberculosis
 ## Motivation
-1. More reliable to do interpolation than extrapolation
-2. Want visibility as to the data used in decision making
-3. Key terms
-   1. Feature set
-   2. Casex
+1. Use of classification of expression state
+   1. Reproduced experimental conditions
+   2. Assess treatments intended to drive pathogen into a desired state
+   3. Compare data from different sources
+1. By robust, we mean: generalizable, accurate, indicate when don't know.
+1. Features that increase robustness:
+   1. interpolation than extrapolation
+   2. Know which data are used so can evaluate the reliability of those data (e.g., document when used and outcomes)
+   3. Augment machine automation with human insight by judgements (e.g., choice of gene combinations used to draw conclusions).
+
+## Classification and Cases
+1. Features, instances, class.
+1. A classifier is an algorithm that inputs feature data for one or more instances and outputs a class assignment for each instance.
+2. Training data. There is typically a pre-step in which the classifier is **trained** on a set of data with known classes so as to estimate parameters of the classification algorithm.
+1. Feature set
+2. Case. A set of features and instances with the same values of the features that are obtained from training data. Ideally, we want cases where all instances are from the same class. A decision tree can be viewed as constructing cases based on the predicates used to reach a leaf from the root. Cases can also be constructed if features have few values. In expression data, there typically trinary values: -1, 0, and 1.
 
 ## Approach
 1. Find cases
@@ -17,6 +28,8 @@
    1. Choose state with mass of distribution at higher significance levels
 
 ## Considerations
+1. Feature Set Filtering. Want to use feature sets that a generalizable in that data taken from one set of experimental conditions are reflective of hypoxia in another.
+   1. We selected feature sets that enrich GO term for hypoxia, lipid metabolism, and fatty acid production.
 1. Bogus cases. With a large number of features and small number of instances, can have cases with high significance level due to chance.
    1. Consider $N_I$ instances of which $N_C$ are the positive class, $N_F$ features, $p$ the probability of two feature values matching.
    2. The probability that all features match the feature vector is $q = p^{N_C}$.
