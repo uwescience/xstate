@@ -30,8 +30,10 @@ def countTerms(feature_set, terms):
       c in feature_set.list]
   # Compile the string of go terms for the genes
   df = provider.df_go_terms
-  go_terms = [df[df[xcn.GENE_ID]==g][xcn.GO_TERM].values[
-      0] for g in genes]
+  indices = [df[df[xcn.GENE_ID]==g].index.tolist()
+      for g in genes]
+  indices = [t for l in indices for t in l]
+  go_terms = df.loc[indices, xcn.GO_TERM].to_list()
   go_str = "****".join(go_terms)
   count = sum([go_str.count(t) for t in terms])
   return count
