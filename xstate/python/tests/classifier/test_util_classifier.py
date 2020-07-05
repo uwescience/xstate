@@ -41,6 +41,17 @@ class TestFunctions(unittest.TestCase):
     fset = FeatureSet(['Rv0981--Rv1332--Rv1828'])
     test(["DUMMY"], 0, fset=fset)
 
+  def testCountTerms2(self):
+    if IGNORE_TEST:
+      return
+    TERMS = ["a"]
+    fset = FeatureSet(["Rv2009"])
+    count1 = util_classifier.countTerms(fset, TERMS,
+        is_include_module=False)
+    count2 = util_classifier.countTerms(fset, TERMS,
+        is_include_module=True)
+    self.assertGreater(count2, count1)
+
   def testExtractAggregatedGene(self):
     if IGNORE_TEST:
       return
