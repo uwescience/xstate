@@ -8,27 +8,34 @@ Case based classification involves counting the (positive) cases for a state $s$
 3. Considering all states, are the results statistically significant?
 
 ## Notation
-### Data
-1. $N$ is the number of replications.
-1. $S$ is the set of classification states, where $s \in S$.
+
 
 ### Cases
 2. $F_s$ is the set feature sets for state $s$, where $f \in F_s$.
 2. $C_s$ is the set of positive cases for state $s$, where $c \in C_s$. The feature set for $c$ is $f_c$.
 
-### Probabilities
+### Feature Data for Which Significance Level is Evaluated
+1. $N$ is the number of replications.
+1. $s \in S$ is a classification state.
+2. $C_s^O$ is the observed positive cases for state $s$.
+2. $n_{sc}$ is the number of occurrences of the positive case $c$. For $c\in C_s^O$, $n_{sc} \geq 1$.
+
+### Probabilities for Significance Levels
 1. $p_c$ is the probability that case $c$ occurs in a feature vector under the null hypothesis.
-2. $q_{cn}$ is the probability of case $c$ occurring in at least $n$ replications under the null hypothesis.
-3. $q_s$ is the probability of $s$ having at least one positive case under the null hypothesis given that there are $\{n_c\}$ cases.
-4. $q$ is the probability of at least one state having at least one positive case under the null hypothesis.
+2. $E_{sc}$ is the event that case $c$ in state $s$ occurs in at least $n_{sc}$ replications. Note that for $c \notin C_s^O$, then $n_c=0$ and so $E_{sc}$ is always true.
+2. $q_{sc} = P(E_{sc})$ under the null hypothesis.
+3. $q_s^O$ is the probability that $E_{sc}$ occurs for at least one $c \in C_s^O$ under the null hypothesis.
+4. $q$ is the probability that $E_{sc}$ occurs for at least one $s \in S$ and $c \in C_s^O$ under the null hypothesis.
 
 
 ## Null Hypothesis
 We assume that: (a) features are independent; (b) feature sets are independent (e.g., non-overlapping features); and (c) values in the feature vector are uniformly distributed across $\{-1, 0, 1\}$.
 
-## Derivation of Distribution
+## Derivation of Probabilities
 First, note that under the null hypothesis,  $p_c =\left (\frac{1}{3}\right )^{|f_c|}$.
 
-Next, we derive $q_{cn}$. This is binomial with parameters $N$ and $p_c$. That is, $q_{cn} = \sum_{j=n_c}^{N} \binom{N}{j} {p_c}^j (1-p_c)^{N - j}$.
+Next, we derive $q_{sc}$. This is binomial with parameters $N$ and $p_c$. That is, $q_{sc} = \sum_{j=n_c}^{N} \binom{N}{j} {p_c}^j (1-p_c)^{N - j}$.
 
-Since feature sets are independent, $q_s = \pi_c 1 - \Pi_c (1 - q_{cn})$ given $\{n_c\}$. And, since states are independent, $q = 1 - \pi_s (1 - q_s)$.
+Since feature sets are independent, $q_s^O = 1-\Pi_{c \in C_s^O} (1 - q_{cn})$.
+
+Since states are independent, $q = 1 - \Pi_s (1 - q_{C_s^O})$.
