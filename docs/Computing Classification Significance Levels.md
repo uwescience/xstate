@@ -18,14 +18,15 @@ Case based classification involves counting the (positive) cases for a state $s$
 1. $N$ is the number of replications.
 1. $s \in S$ is a classification state.
 2. $C_s^O$ is the observed positive cases for state $s$.
+3. $S^O$ is the set of states such that $|C_s^O| >0$ for $s\in S^O$.
 2. $n_{sc}$ is the number of occurrences of the positive case $c$. For $c\in C_s^O$, $n_{sc} \geq 1$.
 
 ### Probabilities for Significance Levels
 1. $p_c$ is the probability that case $c$ occurs in a feature vector under the null hypothesis.
 2. $E_{sc}$ is the event that case $c$ in state $s$ occurs in at least $n_{sc}$ replications. Note that for $c \notin C_s^O$, then $n_c=0$ and so $E_{sc}$ is always true.
 2. $q_{sc} = P(E_{sc})$ under the null hypothesis.
-3. $q_s^O$ is the probability that $E_{sc}$ occurs for at least one $c \in C_s^O$ under the null hypothesis.
-4. $q$ is the probability that $E_{sc}$ occurs for at least one $s \in S$ and $c \in C_s^O$ under the null hypothesis.
+3. $q_s^O$ is the probability that $E_{sc}$ occurs for at least one $c \in C_s^O$ under the null hypothesis for $s \in S^O$.
+4. $q$ is the probability that $E_{sc}$ occurs for at least one $s \in S^O$.
 
 
 ## Null Hypothesis
@@ -38,4 +39,8 @@ Next, we derive $q_{sc}$. This is binomial with parameters $N$ and $p_c$. That i
 
 Since feature sets are independent, $q_s^O = 1-\Pi_{c \in C_s^O} (1 - q_{cn})$.
 
-Since states are independent, $q = 1 - \Pi_s (1 - q_{C_s^O})$.
+Since states are independent, $q = 1 - \Pi_{s \in S^O} (1 - q_{C_s^O})$.
+
+## Issues
+1. Should *all* positive cases be considered, not just those that are observed?
+2. Should there be companion statistics for observed negative cases?
