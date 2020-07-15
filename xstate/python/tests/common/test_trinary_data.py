@@ -106,7 +106,8 @@ class TestTrinaryData(unittest.TestCase):
     if IGNORE_TEST:
       return
     def getDFS(sample):
-      return [sample.AW, sample.AM_MDM, sample.galagan]
+      return [sample.AW, sample.AM_MDM, sample.galagan,
+          sample.sherman]
     #
     def test_single(is_regulator=False):
       sample = trinary_data.getSampleData(
@@ -132,12 +133,14 @@ class TestTrinaryData(unittest.TestCase):
   def testGetTrinaryFromGeneLists(self):
     if IGNORE_TEST:
       return
-    ser = trinary_data._getTrinaryFromGeneLists(
+    df = trinary_data._getTrinaryFromGeneLists(
         induced_path=None, repressed_path=None)
+    ser = df[df.columns.tolist()[0]]
     self.assertEqual(ser.apply(lambda v: np.abs(v)).sum(),
         0)
     #
-    ser = trinary_data._getTrinaryFromGeneLists()
+    df = trinary_data._getTrinaryFromGeneLists()
+    ser = df[df.columns.tolist()[0]]
     self.assertGreater(len(ser[ser == -1]), 0)
     self.assertGreater(len(ser[ser == 1]), 0)
     

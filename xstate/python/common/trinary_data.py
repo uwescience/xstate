@@ -61,7 +61,7 @@ def _getTrinaryFromGeneLists(
   Return
   ______
 
-  pd.Series
+  pd.DataFrame with single column
       index: gene
       value: trinary     
   """
@@ -82,7 +82,7 @@ def _getTrinaryFromGeneLists(
   ser.index = genes
   ser.loc[represseds] = -1
   ser.loc[induceds] = 1
-  return ser
+  return pd.DataFrame(ser)
 
 def getSampleData(is_regulator=True,
     is_display_errors=False):
@@ -112,11 +112,14 @@ def getSampleData(is_regulator=True,
       is_display_errors=is_display_errors)
   if is_regulator:
     df_galagan = _subsetToRegulators(df_galagan)
+  df_sherman = _getTrinaryFromGeneLists()
+  if is_regulator:
+    df_sherman = _subsetToRegulators(df_sherman)
   #
   return SampleData(
       AM_MDM=df_AM_MDM,
       AW=df_AW,
-      sherman=None,
+      sherman=df_sherman,
       galagan=df_galagan)
 
 def _getGalaganData(is_display_errors=False):
