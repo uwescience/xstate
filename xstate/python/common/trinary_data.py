@@ -17,6 +17,7 @@ from common_python.classifier import util_classifier
 import collections
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 import pandas as pd
 
 T1_INDEX = "T1"
@@ -24,10 +25,14 @@ MIN_NUM_NORMOXIA = 2  # Minimum number of normoxia states
 FILE_GALAGAN = "galagan_raw_hypoxia_ts.csv" 
 FILE_AM_MDM = "AM_MDM_Mtb_transcripts_DEseq.csv"
 FILE_AW = "AW_plus_v_AW_neg_Mtb_transcripts_DEseq.csv"
+SHERMAN_INDUCED_PATH = os.path.join(cn.SAMPLES_DIR,
+    "sherman_induced_mtb.txt")
+SHERMAN_REPRESSED_PATH = os.path.join(cn.SAMPLES_DIR,
+    "sherman_repressed_mtb.txt")
 
 
 SampleData = collections.namedtuple("SampleData",
-    "AM_MDM AW galagan")
+    "AM_MDM AW galagan sherman")
 
 
 ################## FUNCTIONS ###############
@@ -39,6 +44,45 @@ def _subsetToRegulators(df_X):
   keys = set(df_X.columns).intersection(
       regulators)
   return df_X[list(keys)]
+
+def _getTrinaryFromGeneLists(
+    repressed_path=SHERMAN_REPRESSED_PATH,
+    induced_path=SHERMAN_INDUCED_PATH):
+  """
+  Creates a feature vector from a list of indiced
+  and repressed genes.
+
+  Parameters
+  ----------
+
+  repressed_path: str
+  induced_path: str
+
+  Return
+  ______
+
+  pd.Series
+      index: gene
+      value: trinary     
+  """
+  provider = DataProvider()
+  provider.do()
+  genes = provider.dfs_read_count[0].index.tolist()
+  #
+  def get_list(path):
+    if path is None:
+      return []
+    with open(path, "r") as fd:
+      items = [l.strip() for l in fd.readlines()]
+    return list(set(genes).intersection(items))
+    #
+  represseds = get_list(repressed_path)
+  induceds = get_list(induced_path)
+  ser = pd.Series(np.repeat(0, len(genes)))
+  ser.index = genes
+  ser.loc[represseds] = -1
+  ser.loc[induceds] = 1
+  return ser
 
 def getSampleData(is_regulator=True,
     is_display_errors=False):
@@ -72,6 +116,7 @@ def getSampleData(is_regulator=True,
   return SampleData(
       AM_MDM=df_AM_MDM,
       AW=df_AW,
+      sherman=None,
       galagan=df_galagan)
 
 def _getGalaganData(is_display_errors=False):

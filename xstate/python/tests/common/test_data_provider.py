@@ -255,8 +255,7 @@ class TestDataProvider(unittest.TestCase):
     self.assertTrue(helpers.isValidDataFrame(df_normalized,
         columns))
     self.assertEqual(len(df), len(df_normalized))
-    ser_length = provider.df_gene_description[cn.LENGTH]
-  
+    #ser_length = provider.df_gene_description[cn.LENGTH]
 
 
 if __name__ == '__main__':

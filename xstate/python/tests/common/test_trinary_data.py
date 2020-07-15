@@ -128,6 +128,18 @@ class TestTrinaryData(unittest.TestCase):
     sample_reg = test_single(is_regulator=True)
     sample_full = test_single(is_regulator=False)
     test_greater(sample_full, sample_reg)
+
+  def testGetTrinaryFromGeneLists(self):
+    if IGNORE_TEST:
+      return
+    ser = trinary_data._getTrinaryFromGeneLists(
+        induced_path=None, repressed_path=None)
+    self.assertEqual(ser.apply(lambda v: np.abs(v)).sum(),
+        0)
+    #
+    ser = trinary_data._getTrinaryFromGeneLists()
+    self.assertGreater(len(ser[ser == -1]), 0)
+    self.assertGreater(len(ser[ser == 1]), 0)
     
 
 if __name__ == '__main__':
