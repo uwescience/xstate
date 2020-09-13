@@ -23,4 +23,4 @@ script:
   - PYTHONPATH="`pwd`/xstate/python:`pwd`/common_python"
   - export PYTHONPATH
   - nosetests xstate/python/tests
-  - bash run_nb notebooks/FeatureSetCollection2
+  - bash run_nb.sh notebooks/FeatureSetCollection2
