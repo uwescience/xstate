@@ -4,6 +4,7 @@ __pycache__/
 *$py.class
 *.swp
 data_provider.pcl
+save/
 
 
 # C extensions
