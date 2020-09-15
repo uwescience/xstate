@@ -1,6 +1,7 @@
 """Common Data Used in Tools."""
 
 import common.constants as cn
+from common.data_provider import DataProvider
 import common_python.classifier.feature_analyzer as fa
 from common_python.classifier  \
     import feature_set_collection as fsc
@@ -28,6 +29,7 @@ class SharedData(object):
         self.__setattr__(
             key, shared_data.__getattribute__(key))
     else:
+      self.provider = DataProvider()
       self.trinary = trinary_data.TrinaryData(
           is_averaged=False, is_dropT1=False,
           is_regulator=True)

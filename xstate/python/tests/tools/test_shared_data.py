@@ -1,4 +1,5 @@
 import common.constants as cn
+from common.data_provider import DataProvider
 from common_python.util.persister import Persister
 from tools import shared_data
 
@@ -32,6 +33,8 @@ class TestSharedData(unittest.TestCase):
       return
     def test():
       data = shared_data.SharedData(persister=self.persister)
+      self.assertTrue(isinstance(data.provider,
+          DataProvider))
       self.assertTrue(isinstance(data.df_X, pd.DataFrame))
       self.assertTrue(isinstance(data.ser_y, pd.Series))
       self.assertTrue(isinstance(data.states,
