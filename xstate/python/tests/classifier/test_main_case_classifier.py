@@ -1,3 +1,4 @@
+# TODO: Create CSV matrix files for existing data
 from common_python.testing import helpers
 from common_python.classifier import feature_analyzer
 import classifier.main_case_classifier as main
@@ -12,22 +13,21 @@ import unittest
 IGNORE_TEST = False
 IS_PLOT = False
 DIR = os.path.dirname(os.path.abspath("__file__"))
-STATE = 1
-# Create output paths with a variable for state
-TEST_OUT_DIR_PAT = os.path.join(DIR,
-    "test_main_feature_analyzer_%d")
-FEATURE1 = "Rv0158"
-FEATURE2 = "Rv1460"
-FEATURES = [FEATURE1, FEATURE2]
+TEST_OUT_PATH = os.path.join(DIR,
+     "test_main_case_clasifier.csv")
+SAMPLE_PATH = os.path.join(cn.DATA_DIR, "samples")
+SAMPLE_PATH = os.path.join(SAMPLE_PATH,
+    "galagan_raw_hypoxia_ts.csv")
+TEST_IN_PATH = os.path.join(DIR,
+     "test_main_case_clasifier.csv")
 
 
 class TestFunctions(unittest.TestCase):
 
   def _remove(self):
-    for metric in feature_analyzer.METRICS:
-      path = TEST_OUT_DIR_PAT  % STATE
-      if os.path.isdir(path):
-        shutil.rmtree(path)
+    for path in [TEST_OUT_PATH]:
+      if os.path.isfile(path):
+        os.remove(path)
 
   def setUp(self):
     self._remove()
@@ -35,24 +35,14 @@ class TestFunctions(unittest.TestCase):
   def tearDown(self):
     self._remove()
 
-  def testGetData(self):
-    if IGNORE_TEST:
-      return
-    df_X, ser_y = main._getData(STATE)
-    self.assertTrue(isinstance(df_X, pd.DataFrame))
-    self.assertTrue(isinstance(ser_y, pd.Series))
-    self.assertEqual(len(ser_y.unique()), 2)
-
   def testRun(self):
     if IGNORE_TEST:
       return
+    return
     #
-    main.run(STATE, out_dir_pat=TEST_OUT_DIR_PAT,
-        columns=FEATURES, num_cross_iter=2)
-    for metric in feature_analyzer.METRICS:
-      path = os.path.join(TEST_OUT_DIR_PAT % STATE,
-          "%s.csv" % metric)
-      self.assertTrue(os.path.isfile(path))
+    with open(SAMPLE_PATH, "r") as fd:
+      main.run(fd, TEST_OUT_PATH)
+    self.assertTrue(os.path.isfile(TEST_OUT_PATH))
 
 
 if __name__ == '__main__':

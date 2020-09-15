@@ -1,8 +1,9 @@
 '''Assesses instances using cases'''
 # TODO: Multi-process the state analysis
+# TODO: Profile
 
 import common.constants as cn
-from common_python.tools.shared_data import SharedData
+from tools.shared_data import SharedData
 
 import argparse
 import numpy as np
@@ -13,10 +14,10 @@ import pandas as pd
 INSTANCE = "instance"
 MAX_SL = 0.001
 REPORT_INTERVAL = 25  # Computations between reports
+DATA_PATH = os.path.join(cn.DATA_DIR, "feature_analyzer")
 
 
-def run(csv_handle, out_filename="report.csv",
-    directory=DATA_PATH):
+def run(csv_handle, out_filename="report.csv"):
     """
     Processes the
 
@@ -38,7 +39,8 @@ def run(csv_handle, out_filename="report.csv",
     for idx, state in enumerate(shared_data.states):
       for instance in df_instance.index:
           collection = shared_data.collection_dct[state]
-          df = collection.getEvaluationDF(ser_X, fset_selector=fset_selector, num_fset=100,
+          df = collection.getEvaluationDF(ser_X,
+              fset_selector=fset_selector, num_fset=100,
               MAX_SL=MAX_SL, **kwargs)
           df[cn.STATE] = state
           df[INSTANCE] = instance
@@ -59,6 +61,6 @@ csv_file should be structured as:
   parser = argparse.ArgumentParser(description=msg)
   parser.add_argument("csv_file",
       help="Differential exxpression data",
-      type=argparse.FileType('r', encoding='UTF-8')
+      type=argparse.FileType('r', encoding='UTF-8'))
   args = parser.parse_args()
   run(args.csv_file)
