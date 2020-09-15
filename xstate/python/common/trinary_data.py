@@ -29,6 +29,7 @@ SHERMAN_INDUCED_PATH = os.path.join(cn.SAMPLES_DIR,
     "sherman_induced_mtb.txt")
 SHERMAN_REPRESSED_PATH = os.path.join(cn.SAMPLES_DIR,
     "sherman_repressed_mtb.txt")
+SAMPLE_DIR = os.path.join(cn.DATA_DIR, "samples")
 
 
 SampleData = collections.namedtuple("SampleData",
@@ -148,7 +149,28 @@ def _getGalaganData(is_display_errors=False):
   df_trinary = df_merge.applymap(lambda v:
     1 if v >= 1 else -1 if v <= -1 else 0)
   return df_trinary.T
-  
+
+# TODO: Test
+def serializeFeatures(df_X, path):
+  """
+  Serializes the feature vector as a CSV file.
+  :param pd.DataFrame df_X:
+  :param str path: output file path
+  """
+  df = df_X.copy()
+  df.index.name = cn.INDEX
+  df.to_csv(path)
+
+def mkTrinaryFeatureMatrices(sample_data):
+  """
+  Creates data in trinary feature matrix.
+  :param SampleData sample_data:
+  """
+  for source in ["AM_MDM", "AW", "sherman", "galagan"]:
+    path = os.path.join(SAMPLE_DIR, "%s.csv" % source)
+    serializeFeatures(
+        sample_data.__getattribute__(source), path)
+    
 
 
 ################## CLASSES ###############
