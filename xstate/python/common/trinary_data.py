@@ -29,11 +29,9 @@ SHERMAN_INDUCED_PATH = os.path.join(cn.SAMPLES_DIR,
     "sherman_induced_mtb.txt")
 SHERMAN_REPRESSED_PATH = os.path.join(cn.SAMPLES_DIR,
     "sherman_repressed_mtb.txt")
-SAMPLE_DIR = os.path.join(cn.DATA_DIR, "samples")
-
-
+SAMPLES = ["AM_MDM", "AW", "sherman", "galagan"]
 SampleData = collections.namedtuple("SampleData",
-    "AM_MDM AW galagan sherman")
+    SAMPLES)
 
 
 ################## FUNCTIONS ###############
@@ -114,14 +112,16 @@ def getSampleData(is_regulator=True,
   if is_regulator:
     df_galagan = _subsetToRegulators(df_galagan)
   df_sherman = _getTrinaryFromGeneLists()
+  df_sherman = df_sherman.transpose()
   if is_regulator:
     df_sherman = _subsetToRegulators(df_sherman)
   #
-  return SampleData(
+  sample_data = SampleData(
       AM_MDM=df_AM_MDM,
       AW=df_AW,
       sherman=df_sherman,
       galagan=df_galagan)
+  return sample_data
 
 def _getGalaganData(is_display_errors=False):
   """
@@ -150,8 +150,7 @@ def _getGalaganData(is_display_errors=False):
     1 if v >= 1 else -1 if v <= -1 else 0)
   return df_trinary.T
 
-# TODO: Test
-def serializeFeatures(df_X, path):
+def serializeFeatureMatrix(df_X, path):
   """
   Serializes the feature vector as a CSV file.
   :param pd.DataFrame df_X:
@@ -161,17 +160,17 @@ def serializeFeatures(df_X, path):
   df.index.name = cn.INDEX
   df.to_csv(path)
 
-def mkTrinaryFeatureMatrices(sample_data):
+def mkFeatureMatrices(sample_data,
+    directory=cn.TRINARY_SAMPLES_DIR):
   """
   Creates data in trinary feature matrix.
   :param SampleData sample_data:
   """
   for source in ["AM_MDM", "AW", "sherman", "galagan"]:
-    path = os.path.join(SAMPLE_DIR, "%s.csv" % source)
-    serializeFeatures(
+    path = os.path.join(directory, "%s.csv" % source)
+    serializeFeatureMatrix(
         sample_data.__getattribute__(source), path)
     
-
 
 ################## CLASSES ###############
 class NormalizedData(object):

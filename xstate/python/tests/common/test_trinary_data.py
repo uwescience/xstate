@@ -1,4 +1,5 @@
 import common.constants as cn
+from common import trinary_data
 from common.trinary_data import TrinaryData, NormalizedData
 from common import trinary_data
 from common_python.testing import helpers
@@ -12,6 +13,8 @@ import unittest
 IGNORE_TEST = False
 IS_PLOT = False
 NUM_REPL = 3
+DIR = os.path.dirname(os.path.abspath(__file__))
+TEST_SAMPLE_PATH = os.path.join(DIR, "sample.csv")
 
 
 ################### FUNCTIONS ############
@@ -37,8 +40,16 @@ def isConsistentState(ser_y):
 ################### Tests ############
 class TestTrinaryData(unittest.TestCase):
 
+  def _remove(self):
+    for path in [TEST_SAMPLE_PATH]:
+      if os.path.isfile(path):
+        os.remove(path)
+
   def setUp(self):
-    pass
+    self._remove()
+
+  def tearDown(self):
+    self._remove()
 
   def testConstructor(self):
     if IGNORE_TEST:
@@ -143,6 +154,27 @@ class TestTrinaryData(unittest.TestCase):
     ser = df[df.columns.tolist()[0]]
     self.assertGreater(len(ser[ser == -1]), 0)
     self.assertGreater(len(ser[ser == 1]), 0)
+
+  def testSerializeFeatureMatrix(self):
+    if IGNORE_TEST:
+      return
+    sample_data = trinary_data.getSampleData()
+    df_X = sample_data.galagan
+    self.assertFalse(os.path.isfile(TEST_SAMPLE_PATH))
+    trinary_data.serializeFeatureMatrix(df_X,
+        TEST_SAMPLE_PATH)
+    self.assertTrue(os.path.isfile(TEST_SAMPLE_PATH))
+
+  def testSerializeFeatureMatrix(self):
+    if IGNORE_TEST:
+      return
+    sample_data = trinary_data.getSampleData()
+    trinary_data.mkFeatureMatrices(sample_data,
+        directory=DIR)
+    for source in trinary_data.SAMPLES:
+      path = os.path.join(DIR, "%s.csv" % source)
+      self.assertTrue(os.path.isfile(path))
+ 
     
 
 if __name__ == '__main__':

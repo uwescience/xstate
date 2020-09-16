@@ -14,7 +14,6 @@ import pandas as pd
 INSTANCE = "instance"
 MAX_SL = 0.001
 REPORT_INTERVAL = 25  # Computations between reports
-DATA_PATH = os.path.join(cn.DATA_DIR, "feature_analyzer")
 
 
 def run(csv_handle, out_filename="report.csv"):

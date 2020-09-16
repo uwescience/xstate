@@ -12,7 +12,7 @@ import unittest
 
 IGNORE_TEST = False
 IS_PLOT = False
-DIR = os.path.dirname(os.path.abspath("__file__"))
+DIR = os.path.dirname(os.path.abspath(__file__))
 TEST_OUT_PATH = os.path.join(DIR,
      "test_main_case_clasifier.csv")
 SAMPLE_PATH = os.path.join(cn.DATA_DIR, "samples")

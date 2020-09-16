@@ -49,6 +49,9 @@ PROJECT_DIR = os.path.abspath(__file__)
 for _ in range(4):
   PROJECT_DIR = os.path.dirname(PROJECT_DIR)
 DATA_DIR = os.path.join(PROJECT_DIR, 'data')
+SAMPLES_DIR = os.path.join(DATA_DIR, "samples")
+TRINARY_SAMPLES_DIR = os.path.join(SAMPLES_DIR,
+    "trinary_data")
 CODE_DIR = PROJECT_DIR
 for directory in ["xstate", "python"]:
   CODE_DIR = os.path.join(CODE_DIR, directory)
@@ -56,7 +59,6 @@ TEST_DIR = os.path.join(CODE_DIR, "tests")
 DATA_PROVIDER_PERSISTER_PATH = os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
     "data_provider.pcl")
-SAMPLES_DIR = os.path.join(DATA_DIR, "samples")
 ENSEMBLE_PATH = os.path.join(DATA_DIR, "ensemble.pcl")
 
 # Data Characeristics
