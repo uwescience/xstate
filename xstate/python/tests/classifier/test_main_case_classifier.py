@@ -18,7 +18,7 @@ DIR = os.path.dirname(os.path.abspath(__file__))
 TEST_OUT_PATH = os.path.join(DIR,
      "test_main_case_classifier.csv")
 TEST_IN_PATH = os.path.join(cn.TRINARY_SAMPLES_DIR,
-     "AW.csv")
+     "AM_MDM.csv")
 STATE = 1
 
 
@@ -43,7 +43,8 @@ class TestFunctions(unittest.TestCase):
         state=STATE, df=df_instance, num_fset=5)
     df = main._runState(arguments)
     columns = expected_columns=[ccn.FEATURE_VECTOR,
-        ccn.SIGLVL, cn.STATE, main.INSTANCE]
+        ccn.SIGLVL, cn.STATE, main.INSTANCE,
+        ccn.FRAC, ccn.COUNT]
     self.assertTrue(helpers.isValidDataFrame(df,
         expected_columns=columns,
         nan_columns=columns))

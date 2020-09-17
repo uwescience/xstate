@@ -40,7 +40,12 @@ def _runState(arguments):
   Return
   ------
   pd.DataFrame
-      Columns: FEATURE_VECTOR, SIGLVL, STATE, INSTANCE
+      FEATURE_VECTOR
+      SIGLVL: significance level of FRAC
+      STATE: state analyzed
+      INSTANCE: from data feature vector
+      COUNT: number of cases
+      FRAC: fraction of positive cases
   """
   state = arguments.state
   df_instance = arguments.df
@@ -52,16 +57,12 @@ def _runState(arguments):
   for instance in df_instance.index:
       ser_X = df_instance.loc[instance, :]
       collection = shared_data.collection_dct[state]
-      df = collection.getEvaluationDF(ser_X,
+      df = collection.getFVEvaluations(ser_X,
           fset_selector=fset_selector, num_fset=num_fset,
           max_sl=MAX_SL)
-      if len(df) == 0:
-        df = pd.DataFrame({
-            ccn.FEATURE_VECTOR: [np.nan],
-            ccn.SIGLVL: [np.nan],
-            })
-      df[cn.STATE] = state
-      df[INSTANCE] = instance
+      if len(df) > 0:
+        df[cn.STATE] = state
+        df[INSTANCE] = instance
       dfs.append(df)
   df_result = pd.concat(dfs)
   df_result.index = range(len(df_result.index))
@@ -124,6 +125,8 @@ def run(input_fd, output_fd, num_fset=NUM_FSET):
     pool.join()
     df_report = pd.concat(results)
     df_report.to_csv(output_fd, index=False)
+    input_fd.close()
+    output_fd.close()
 
 
 if __name__ == '__main__':
