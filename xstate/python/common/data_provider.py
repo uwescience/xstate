@@ -223,18 +223,23 @@ class DataProvider(object):
       """
       num_repl = self._getNumRepl()
       df_mean = self._makeMeanDF()
-      dfs = self.removeReplicaStrings(self.dfs_centered_adjusted_read_count)
-      df_std = (sum([dfs[n]*dfs[n] for n in range(num_repl)])
-          - num_repl * df_mean * df_mean) / (num_repl - 1)
+      dfs = self.removeReplicaStrings(
+          self.dfs_centered_adjusted_read_count)
+      df_std = (sum([dfs[n]*dfs[n]
+          for n in range(num_repl)])  \
+          - num_repl * df_mean * df_mean) /  \
+          (num_repl - 1)
       return df_std.pow(1./2)
 
   def _reduceDF(self, df):
     """
-    Reduces a dataframe indexed by GENE_ID to those genes available in df_gene_description
+    Reduces a dataframe indexed by GENE_ID to those 
+    genes available in df_gene_description
     :param pd.DataFrame df: indexed by GENE_ID
     :return pd.DataFrame:
     """
-    return pd.DataFrame([r for idx, r in df.iterrows() if idx in self.df_gene_description.index])
+    return pd.DataFrame([r for idx, r in df.iterrows()
+        if idx in self.df_gene_description.index])
 
   def _makeReadCountDFS(self):
     """

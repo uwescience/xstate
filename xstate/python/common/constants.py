@@ -14,6 +14,7 @@ CNT_UP = "cnt_up"  # Count of +1s present
 CV = "cv"  # coefficient of variation
 END = "End"  # Start position of gene
 FEATURE = "feature"
+GENE_DESCRIPTION = "gene_description" 
 GENE_ID = "GENE_ID"  # Unique string for gene
 GENE_IDS = "GENE_IDs"  # List of GENE_ID
 GENE_NAME = "GENE_NAME"

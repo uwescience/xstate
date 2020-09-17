@@ -1,9 +1,11 @@
 '''Assesses instances using cases'''
-# TODO: Add gene description
 # TODO: Add output file
 
 import common.constants as cn
+from common.data_provider import DataProvider
 import common_python.constants as ccn
+from common_python.classifier.feature_set import  \
+    FeatureVector
 from tools.shared_data import SharedData
 
 import argparse
@@ -20,6 +22,7 @@ REPORT_INTERVAL = 25  # Computations between reports
 NUM_FSET = 100  # Number of feature sets examined
 Arguments = collections.namedtuple("Arguments",
     "state df num_fset")
+INDEX = "index"
 
 
 def _runState(arguments):
@@ -60,26 +63,55 @@ def _runState(arguments):
       df[cn.STATE] = state
       df[INSTANCE] = instance
       dfs.append(df)
-  return pd.concat(dfs)
+  df_result = pd.concat(dfs)
+  df_result.index = range(len(df_result.index))
+  # Augment the dataframe with gene descriptions
+  provider = DataProvider()
+  provider.do()
+  df_go = provider.df_go_terms
+  descriptions = []
+  for stg in df_result[ccn.FEATURE_VECTOR]:
+    if not isinstance(stg, str):
+      descriptions.append("")
+    else:
+      feature_vector = FeatureVector.make(stg)
+      features = feature_vector.fset.set
+      description = []
+      for feature in features:
+        df_sub = df_go[df_go[cn.GENE_ID] == feature]
+        this_desc = ["%s: %s " % (feature, f)
+            for f in df_sub[cn.GO_TERM]]
+        description.extend(this_desc)
+      description = "\n".join(description)
+      descriptions.append(description)
+  #
+  df_result[cn.GENE_DESCRIPTION] = descriptions
+  return df_result
 
 
-def run(csv_handle, out_filename="report.csv",
-    num_fset=NUM_FSET):
+def run(input_fd, output_fd, num_fset=NUM_FSET):
     """
     Processes the
 
     Parameters
     ----------
-    ser_X: pd.DataFrame
-        Feature vector for a single instance
+    input_fd: File Descriptor
+        Input CSV file
+    output_fd: File Descriptor
+        Output file
+    num_fset: int
+        Number of FeatureSets considered
         
     Returns
     -------
     None.
     """
     # Initializations
-    out_path = os.path.join(cn.SAMPLES_DIR, out_filename)
-    df_instance = pd.read_csv(csv_handle)
+    df_instance = pd.read_csv(input_fd)
+    if not INDEX in df_instance.columns:
+       msg = "One input column must be named 'instance'."
+       raise ValueError(msg)
+    df_instance = df_instance.set_index(INDEX)
     # Iterate across instances
     shared_data = SharedData()
     num_process = len(shared_data.states)
@@ -91,7 +123,7 @@ def run(csv_handle, out_filename="report.csv",
       results = pool.map(_runState, arguments_list)
     pool.join()
     df_report = pd.concat(results)
-    df_report.to_csv(out_path, index=False)
+    df_report.to_csv(output_fd, index=False)
 
 
 if __name__ == '__main__':
@@ -99,13 +131,16 @@ if __name__ == '__main__':
 Run state evaluations.
 csv_file should be structured as:
    Rows are genes.
-   Columns are instances.
+   Columns are instances. There should be an 'index' column name
    First column names the instances.
    Values are trinary.
 """
   parser = argparse.ArgumentParser(description=msg)
-  parser.add_argument("csv_file",
-      help="Differential exxpression data",
+  parser.add_argument("input_file",
+      help="Input CSV file of trinary exxpression data",
       type=argparse.FileType('r', encoding='UTF-8'))
+  parser.add_argument("output_file",
+      help="Output CSV file of report by feature vector",
+      type=argparse.FileType('w', encoding='UTF-8'))
   args = parser.parse_args()
-  run(args.csv_file)
+  run(args.input_file, args.output_file)

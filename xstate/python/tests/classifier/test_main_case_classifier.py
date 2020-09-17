@@ -16,9 +16,9 @@ IGNORE_TEST = True
 IS_PLOT = True
 DIR = os.path.dirname(os.path.abspath(__file__))
 TEST_OUT_PATH = os.path.join(DIR,
-     "test_main_case_clasifier.csv")
+     "test_main_case_classifier.csv")
 TEST_IN_PATH = os.path.join(cn.TRINARY_SAMPLES_DIR,
-     "sherman.csv")
+     "AW.csv")
 STATE = 1
 
 
@@ -40,7 +40,7 @@ class TestFunctions(unittest.TestCase):
       return
     df_instance = pd.read_csv(TEST_IN_PATH)
     arguments = main.Arguments(
-        state=STATE, df=df_instance, num_fset=10)
+        state=STATE, df=df_instance, num_fset=5)
     df = main._runState(arguments)
     columns = expected_columns=[ccn.FEATURE_VECTOR,
         ccn.SIGLVL, cn.STATE, main.INSTANCE]
@@ -51,8 +51,9 @@ class TestFunctions(unittest.TestCase):
   def testRun(self):
     # TESTING
     #
-    with open(TEST_IN_PATH, "r") as fd:
-      main.run(fd, TEST_OUT_PATH, num_fset=2)
+    with open(TEST_IN_PATH, "r") as in_fd:
+      with open(TEST_OUT_PATH, "w") as out_fd:
+        main.run(in_fd, out_fd, num_fset=2)
     self.assertTrue(os.path.isfile(TEST_OUT_PATH))
     self.assertTrue(os.path.isfile(TEST_OUT_PATH))
 
