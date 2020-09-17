@@ -17,7 +17,7 @@ import pandas as pd
 DIR = os.path.dirname(os.path.abspath(__file__))
 PERSISTER_PATH = os.path.join(DIR,
     "persister_shared_data.pcl")
-PERSISTER = Persister(DIR)
+PERSISTER = Persister(PERSISTER_PATH)
 
 
 class SharedData(object):
