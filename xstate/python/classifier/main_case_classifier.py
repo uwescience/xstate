@@ -1,6 +1,6 @@
 '''Assesses instances using cases'''
-# TODO: Multi-process the state analysis
-# TODO: Profile
+# TODO: Add gene description
+# TODO: Add output file
 
 import common.constants as cn
 import common_python.constants as ccn
@@ -91,7 +91,7 @@ def run(csv_handle, out_filename="report.csv",
       results = pool.map(_runState, arguments_list)
     pool.join()
     df_report = pd.concat(results)
-    df_report.to_csv(out_path)
+    df_report.to_csv(out_path, index=False)
 
 
 if __name__ == '__main__':

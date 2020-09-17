@@ -1,4 +1,5 @@
 
+-1. Add gene description to case_classifier
 -1. Galagan data has no underexpression? Share w/Mario + Eliza.
 0. FeatureSet.evaluate
 1. FeatureSetCollection.plotEvaluate. bar height - 2 log10 (SL); xaxis - FeatureSet

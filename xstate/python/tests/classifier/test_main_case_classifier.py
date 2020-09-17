@@ -48,15 +48,13 @@ class TestFunctions(unittest.TestCase):
         expected_columns=columns,
         nan_columns=columns))
   
-  # TODO: Test. Also, add gene descriptions
   def testRun(self):
-    return
     # TESTING
     #
     with open(TEST_IN_PATH, "r") as fd:
       main.run(fd, TEST_OUT_PATH, num_fset=2)
     self.assertTrue(os.path.isfile(TEST_OUT_PATH))
-    import pdb; pdb.set_trace()
+    self.assertTrue(os.path.isfile(TEST_OUT_PATH))
 
 
 if __name__ == '__main__':
