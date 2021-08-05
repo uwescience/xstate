@@ -147,7 +147,8 @@ PYTHONPATH=""
 . $HOME/miniconda3/etc/profile.d/conda.sh  # commented out by conda initialize
 conda config --set changeps1 True
 conda activate base
-cd xstate
+cd $HOME/xstate
 source $HOME/BaseStack/bin/setup_run.sh
-cd xstate/python
+cd $HOME/xstate//xstate/python
 source $HOME/BaseStack/bin/setup_run.sh
+source $HOME/xstate/bin/alias.sh

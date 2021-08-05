@@ -336,6 +336,10 @@ class DataProvider(object):
     # Adjust for library size
     ser_tot = df.sum(axis=0)/MILLION
     df_result = df/ser_tot
+    # Find genes to keep
+    if self._is_only_qgenes:
+      keep_genes = self.df_gene_expression_state.index
+      df_result = df_result[df_result.index.isin(keep_genes)]
     # Adjust for gene length
     for gene in df.index:
       if gene in self.df_gene_description.index:
@@ -345,10 +349,6 @@ class DataProvider(object):
         if self._is_display_errors:
           msg = "**Warning: Data doesn't have gene %s" % gene
           print(msg)
-    # Find genes to keep
-    if self._is_only_qgenes:
-      keep_genes = self.df_gene_expression_state.index
-      df_result = df_result[df_result.index.isin(keep_genes)]
     #
     if is_time_columns:
       df_result.columns = self.makeTimes(suffix=suffix)
