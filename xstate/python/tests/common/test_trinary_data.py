@@ -168,12 +168,20 @@ class TestTrinaryData(unittest.TestCase):
   def testSerializeFeatureMatrix(self):
     if IGNORE_TEST:
       return
+    def removeFiles():
+      for source in trinary_data.SAMPLES:
+        path = os.path.join(DIR, "%s.csv" % source)
+        if os.path.isfile(path):
+          os.remove(path)
+    #
+    removeFiles()
     sample_data = trinary_data.getSampleData()
     trinary_data.mkFeatureMatrices(sample_data,
         directory=DIR)
     for source in trinary_data.SAMPLES:
       path = os.path.join(DIR, "%s.csv" % source)
       self.assertTrue(os.path.isfile(path))
+    removeFiles()
  
     
 

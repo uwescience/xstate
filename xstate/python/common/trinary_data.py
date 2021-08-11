@@ -25,11 +25,12 @@ MIN_NUM_NORMOXIA = 2  # Minimum number of normoxia states
 FILE_GALAGAN = "galagan_raw_hypoxia_ts.csv" 
 FILE_AM_MDM = "AM_MDM_Mtb_transcripts_DEseq.csv"
 FILE_AW = "AW_plus_v_AW_neg_Mtb_transcripts_DEseq.csv"
+FILE_RUSTAD = "rustad_hypoxia_dataset_GSE9331.csv"
 SHERMAN_INDUCED_PATH = os.path.join(cn.SAMPLES_DIR,
     "sherman_induced_mtb.txt")
 SHERMAN_REPRESSED_PATH = os.path.join(cn.SAMPLES_DIR,
     "sherman_repressed_mtb.txt")
-SAMPLES = ["AM_MDM", "AW", "sherman", "galagan"]
+SAMPLES = ["AM_MDM", "AW", "sherman", "galagan", "rustad"]
 SampleData = collections.namedtuple("SampleData",
     SAMPLES)
 
@@ -115,12 +116,21 @@ def getSampleData(is_regulator=True,
   df_sherman = df_sherman.transpose()
   if is_regulator:
     df_sherman = _subsetToRegulators(df_sherman)
+  # Add Rustad data
+  df_rustad = transform_data.trinaryReadsDF(
+      csv_file=FILE_RUSTAD,
+      is_display_errors=is_display_errors,
+      is_time_columns=False).T
+  if is_regulator:
+    df_rustad = _subsetToRegulators(df_rustad)
   #
   sample_data = SampleData(
       AM_MDM=df_AM_MDM,
       AW=df_AW,
       sherman=df_sherman,
-      galagan=df_galagan)
+      galagan=df_galagan,
+      rustad=df_rustad,
+      )
   return sample_data
 
 def _getGalaganData(is_display_errors=False):
@@ -166,7 +176,7 @@ def mkFeatureMatrices(sample_data,
   Creates data in trinary feature matrix.
   :param SampleData sample_data:
   """
-  for source in ["AM_MDM", "AW", "sherman", "galagan"]:
+  for source in SAMPLES:
     path = os.path.join(directory, "%s.csv" % source)
     serializeFeatureMatrix(
         sample_data.__getattribute__(source), path)
