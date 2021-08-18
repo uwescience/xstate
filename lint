@@ -2,4 +2,5 @@
 # Lints codes in project
 lint.sh $1 | grep -v "Bad indentation" \
            | grep -v "C0413: Import" \
-            | grep -v "R1718: Consider using a set"
+           | grep -v "R1718: Consider using a set" \
+           | grep -v "W0640: Cell variable" \
