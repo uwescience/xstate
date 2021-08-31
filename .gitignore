@@ -6,6 +6,8 @@ __pycache__/
 data_provider.pcl
 save/
 
+*.pcl
+
 
 # C extensions
 *.so
