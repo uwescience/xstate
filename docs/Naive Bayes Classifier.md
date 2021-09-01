@@ -50,16 +50,38 @@ least $M$ of the $K$ events.
 That is, we calculate
 $P(c_i | \mbox{at least }$M$ \mbox{ of } {\bf e})$.
 
-## Implementation
-$P(e_k | c_i)$ is the probability of the feature values occurring in the class.
-This is a bit different from the current calculation in that the denominator should be the number of occurrences of the class.
+## Implementation Considerations
+There are two considerations:
+1. Select cases
+1. Calculate $P(c_i | \mbox{at least }$M$ \mbox{ of } {\bf e})$.
 
-The most profound implication is that the $e_i$ must be conditionally independent and so they should not share features.
-An easier way to ensure this is to do the following for each ``case\_collection`` ($c_i$):
-1. Calculate $- log(P(e_k | c_i))$ and $- log \left( 1 - P(e_k | c_i) \right)$
-1. Sort by descending value so that $k$ indicates this ordering.
-1. Delete $e_k$ if it has a feature in commong
-with $e_n$, $n < k$.
+### Selecting Cases
+The $e_i$ must be conditionally independent and so their
+underlying cases should have disjoint features.
+Let $v_k = 1$ if case $k$ is present;
+otherwise $v_k = 0$.
+
+Below is a
+"greedy'' algorithm for selecting $K$ cases
+that have no feature in common
+from an initial set of cases.
+1. Calculate $r_k = max \left[ 
+\frac{P(v_k = 1 | c = 1)}{P(v_k = 0 | c = 0)},
+\frac{P(v_k = 0 | c = 1)}{Pv_k = 1 | c = 0)}
+\right]$
+1. Sort by descending $r_k$,
+and let $n$ index this ordering.
+1. Delete $e_j$ if its associated case has a feature in common
+with the case for any $e_{j ^{\prime}}$, $j^{\prime} < j$.
+1. Choose the top $K$ cases.
+
+### Calculating Probabilities
+Since the probability of events have different probabilities,
+probabilities are calculated numerically using
+combinatorics.
+We expect that a typical value for $M$ will be 2 or 3.
+So, it will be easier to calculate
+$1 - P(c_i | \mbox{fewer than }$M$ \mbox{ of } {\bf e} \mbox{ are not present})$.
 
 ## Plan
 1. ``Case``: Calculate $P(e_k | c_i)$ and save as ``- log``.
