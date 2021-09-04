@@ -84,18 +84,21 @@ So, it will be easier to calculate
 $1 - P(c_i | \mbox{fewer than }$M$ \mbox{ of } {\bf e} \mbox{ are not present})$.
 
 ## Plan
-1. ``Case``: Calculate $P(e_k | c_i)$ and save as ``- log``.
-1. ``CaseCollection``
-   1. ``createIndependentCases``. Use the algorithm above to create cases for each class that do not share features.
-1. Ensure that by default there is no filtering by significance level. 
-   1. Calculate $log ( P(c_i))$
-   1. ``calcLogJointProbability`` calculates
-   $\sum_k log v(e_k)$, where $v(e_k) = -log (P(e_k | c_i))$ if $e_k$ is present and $-log (1 - P(e_k | c_i))$ otherwise.
-   Provide the actual probability as well.
-   1. New bar plots that plot the probability of each class.
+1. Try off-the-shelf naive Bayes with all features.
+
+1. Use cases
+    1. ``Case``: Calculate $P(e_k | c_i)$ and save as ``- log``.
+    1. ``CaseCollection``
+       1. ``createIndependentCases``. Use the algorithm above to create cases for each class that do not share features.
+    1. Ensure that by default there is no filtering by significance level. 
+       1. Calculate $log ( P(c_i))$
+       1. ``calcLogJointProbability`` calculates
+       $\sum_k log v(e_k)$, where $v(e_k) = -log (P(e_k | c_i))$ if $e_k$ is present and $-log (1 - P(e_k | c_i))$ otherwise.
+       Provide the actual probability as well.
+       1. New bar plots that plot the probability of each class.
    
 ## Notes
-1. ``sklearn`` has an implementation of naive bayes.
+1. ``sklearn`` has an implementation of [Bernoulli Naive Bayes](https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.BernoulliNB.html).
 
 ## Issues
 1. Potentially dramatic impact of small probabilities because they result in large negative values.

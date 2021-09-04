@@ -24,14 +24,14 @@ PERSISTER_PATH_PAT = os.path.join(DIR,
 IS_RESTART = True
 
 
-def _getData(state, columns=None):
+def _getData(state, columns=None, **kwargs):
   """
   Obtains data for a binary classifier for the class.
   :param int state: state for which classification is done
-  :param pd.DataFrame, pd.Series:
+  :param kwargs: dict: Options for TrinaryData
+  :returns pd.DataFrame, pd.Series:
   """
-  trinary = TrinaryData(is_averaged=False,
-      is_dropT1=False, is_regulator=True)
+  trinary = TrinaryData(**kwargs)
   ser_y = trinary.ser_y.apply(lambda v:
     1 if v == state else 0)
   if columns is None:
@@ -40,7 +40,8 @@ def _getData(state, columns=None):
     df_X = trinary.df_X[columns].copy()
   return df_X, ser_y
 
-def run(state, out_dir_pat=OUT_PATH_DIR_PAT,
+def run(state, out_dir_pat=OUT_PATH_DIR_PAT, num_cross_iter=NUM_CROSS_ITER,
+    report_interval=REPORT_INTERVAL,
     columns=None, is_restart=IS_RESTART, **kwargs):
   """
   Runs feature selection.
@@ -48,11 +49,13 @@ def run(state, out_dir_pat=OUT_PATH_DIR_PAT,
   :param dict kwargs: optional arguments for
        FeatureAnalyzer
   :param list-str columns: columns of df_X to use
+  :param kwargs dict: arguments for TrinaryData
   """
   # Initializations
-  df_X, ser_y = _getData(state, columns)
+  df_X, ser_y = _getData(state, columns, **kwargs)
   analyzer = feature_analyzer.FeatureAnalyzer(
-      CLF, df_X, ser_y, **kwargs)
+      CLF, df_X, ser_y,
+      num_cross_iter=num_cross_iter, report_interval=report_interval)
   out_dir = out_dir_pat  % state
   _ = analyzer.serialize(out_dir,
       persister_path=PERSISTER_PATH_PAT % state,
@@ -73,4 +76,5 @@ if __name__ == '__main__':
   args = parser.parse_args()
   run(args.state, num_cross_iter=NUM_CROSS_ITER,
       is_restart=args.restart,
-      report_interval=REPORT_INTERVAL)
+      report_interval=REPORT_INTERVAL,
+      is_regulator=False, is_dropT1=False, is_averaged=False)

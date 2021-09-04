@@ -20,7 +20,8 @@ NUM_CLASSIFIERS = 50
 
 def make(num_features=NUM_FEATURES,
     num_classifiers=NUM_CLASSIFIERS, 
-    file_path=cn.ENSEMBLE_PATH, is_force=True):
+    file_path=cn.ENSEMBLE_PATH, is_force=True,
+    **kwargs):
   """
   Creates a classifier ensemble from the time course data,
   and fits the classifier.
@@ -29,6 +30,7 @@ def make(num_features=NUM_FEATURES,
   :param str file_path: path where classifier is exported
   :param bool is_force: Create new classifier even
       if one exists already.
+  :param dict kwargs: Options passed to TrinaryData
   :return  ClassifierEnsemble:
   """
   # See if there's a classifier already
@@ -42,7 +44,7 @@ def make(num_features=NUM_FEATURES,
   svm_ensemble = classifier_ensemble.ClassifierEnsemble(
           classifier_ensemble.ClassifierDescriptorSVM(), 
           filter_high_rank=num_features, size=num_classifiers)
-  data = TrinaryData()
+  data = TrinaryData(**kwargs)
   data.df_X.columns = data.features
   svm_ensemble.fit(data.df_X, data.ser_y)
   svm_ensemble.serialize(file_path)
