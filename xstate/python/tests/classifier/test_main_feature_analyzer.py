@@ -11,6 +11,7 @@ import unittest
 
 
 IGNORE_TEST = False
+IS_PLOT = False
 IS_REPORT = False
 DIR = os.path.dirname(os.path.abspath("__file__"))
 STATE = 1
@@ -47,12 +48,19 @@ class TestFunctions(unittest.TestCase):
   def testRun(self):
     if IGNORE_TEST:
       return
-    main.run(STATE, out_dir_pat=TEST_OUT_DIR_PAT,
+    main.run(STATE, out_dir_pat=TEST_OUT_DIR_PAT, is_restart=True,
         columns=FEATURES, num_cross_iter=2)
     for metric in feature_analyzer.METRICS:
       path = os.path.join(TEST_OUT_DIR_PAT % STATE,
           "%s.csv" % metric)
       self.assertTrue(os.path.isfile(path))
+
+  def testRunStatus(self):
+    if IGNORE_TEST:
+      return
+    main.run(STATE, out_dir_pat=TEST_OUT_DIR_PAT, is_restart=True,
+        is_status=True, is_report=IS_PLOT,
+        columns=FEATURES, num_cross_iter=2)
 
 
 if __name__ == '__main__':
