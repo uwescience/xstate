@@ -54,11 +54,11 @@ def run(state, out_dir_pat=OUT_PATH_DIR_PAT, num_cross_iter=NUM_CROSS_ITER,
   # Initializations
   df_X, ser_y = _getData(state, columns, **kwargs)
   analyzer = feature_analyzer.FeatureAnalyzer(
-      CLF, df_X, ser_y,
+      CLF, df_X, ser_y, max_features_for_pairing=100,
+      persister_path=PERSISTER_PATH_PAT % state,
       num_cross_iter=num_cross_iter, report_interval=report_interval)
   out_dir = out_dir_pat  % state
   _ = analyzer.serialize(out_dir,
-      persister_path=PERSISTER_PATH_PAT % state,
       is_restart=is_restart)
 
 

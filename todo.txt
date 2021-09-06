@@ -1,39 +1,5 @@
-
--1. Add gene description to case_classifier
--1. Galagan data has no underexpression? Share w/Mario + Eliza.
-0. FeatureSet.evaluate
-1. FeatureSetCollection.plotEvaluate. bar height - 2 log10 (SL); xaxis - FeatureSet
-along with occurrences counts that comply and dont.
-2. Why are there inconsistent results for ser_comb?
-
-
-1. FeatureSetVector
-   a. Assigns a value to each feature organized by
-      FeatureSet. dataframe representation
-   b. Can do XOR operation between FSV to calc distance
-      (calculate abs of difference for same feature, cls)
-   c. Plot for different classes.
-3. Update multi_classifier.py and tests
-  -- ensemble of features
-  -- ensemble of instance holdouts
-4. Feature set value plot
-   a. Indicates the trinary value of each feature in
-      a feature set. The value is the sign of
-      of the parameter, with 0 for small values.
-  b. Structure
-     x - feature set
-     y - number of features in the set
-     color of each bar in stack
-       blue: -1
-       grey: 0
-       red:  1
-5. Feature set difference plot. (Diagnostic)
-  a. Evaluates an instance of a trinary feature vector
-     for a binary classifier
-  b. Structure
-     x - feature set
-     y - number of features in the set
-     color of each bar in stack
-       blue: same trinary value in classifier & sample
-       grey: differs by 1
-       red: differs by 2
+1. Handle feature combinations via "--"
+     a) generalize isCompatible
+     b) predict must consider multiple possible predictions
+2. Prediction must have option to consider only those feature vectors
+   that exist in the training data.

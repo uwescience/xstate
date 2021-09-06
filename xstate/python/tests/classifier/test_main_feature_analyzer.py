@@ -17,8 +17,8 @@ STATE = 1
 # Create output paths with a variable for state
 TEST_OUT_DIR_PAT = os.path.join(DIR,
     "test_main_feature_analyzer_%d")
-FEATURE1 = "Rv0158"
-FEATURE2 = "Rv1460"
+FEATURE1 = "Rv1927"
+FEATURE2 = "Rv1129c"
 FEATURES = [FEATURE1, FEATURE2]
 
 
@@ -47,7 +47,6 @@ class TestFunctions(unittest.TestCase):
   def testRun(self):
     if IGNORE_TEST:
       return
-    #
     main.run(STATE, out_dir_pat=TEST_OUT_DIR_PAT,
         columns=FEATURES, num_cross_iter=2)
     for metric in feature_analyzer.METRICS:
