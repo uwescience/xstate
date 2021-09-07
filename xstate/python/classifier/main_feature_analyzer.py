@@ -67,16 +67,18 @@ def run(state, out_dir_pat=OUT_PATH_DIR_PAT, num_cross_iter=NUM_CROSS_ITER,
   persister_path = PERSISTER_PATH_PAT % state
   df_X, ser_y = _getData(state, columns, **kwargs)
   if is_status:
+    func = lambda d: len(d["score"])
+    #
     persister = Persister(persister_path)
     analyzer = persister.get()
-    pair_length = MAX_FEATURES_FOR_PAIRING*(MAX_FEATURES_FOR_PAIRING-1)  \
+    pair_length = MAX_FEATURES_FOR_PAIRING*(MAX_FEATURES_FOR_PAIRING-1)/2  \
         + MAX_FEATURES_FOR_PAIRING
     dct = {
         "sfa": {CUR_LEN: calcLen(analyzer._sfa_dct, lambda d: len(d.keys())),
                 MAX_LEN: len(df_X.columns)},
-        "cpc": {CUR_LEN: calcLen(analyzer._cpc_dct, lambda d: len(d["score"])),
+        "cpc": {CUR_LEN: calcLen(analyzer._cpc_dct, func),
                 MAX_LEN: pair_length},
-        "ipa": {CUR_LEN: calcLen(analyzer._ipa_dct, lambda d: len(d["score"])),
+        "ipa": {CUR_LEN: calcLen(analyzer._ipa_dct, func),
                 MAX_LEN: pair_length},
         }
     report_stg = "State %s: " % str(state)
