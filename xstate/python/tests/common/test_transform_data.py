@@ -114,8 +114,19 @@ class TestFunctions(unittest.TestCase):
     result = transform_data.stripReplicaString(names)
     self.assertEqual(result[0], TIME)
     self.assertEqual(len(result), SIZE)
-  
 
+  def testRemoveGenesWithExcessiveReplicationVariance(self):
+    if IGNORE_TEST:
+      return
+    trinary = TrinaryData(is_averaged=False, is_dropT1=False,
+        is_regulator=False)
+    df_base = transform_data.removeGenesWithExcessiveReplicationVariance(
+        trinary.df_X)
+    for max_var in [1, 2, 3]:
+      df = transform_data.removeGenesWithExcessiveReplicationVariance(
+          trinary.df_X, max_var=max_var)
+      self.assertGreaterEqual(len(df_base.columns), len(df.columns))
+    
 
 if __name__ == '__main__':
   unittest.main()

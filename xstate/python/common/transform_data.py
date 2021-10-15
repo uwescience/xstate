@@ -161,4 +161,31 @@ def calcTrinaryComparison(df, ser_ref=None, threshold=1, is_convert_log2=True):
   df_result = df_comp.applymap(
       lambda v: 0 if np.abs(v) < threshold else -1 if v < 0 else 1)
   return df_result
+
+def removeGenesWithExcessiveReplicationVariance(df_X, max_var=None):
+  """
+  Removes Genes with excessive variation in the variance of their
+  trinary values. Assumes a single digit replication.
+
+  Parameters
+  ----------
+  df_X: DataFrame
+      index: str <instance>.replication-digit
+         ex: T10.2
+  max_var: float
   
+  Returns
+  -------
+  DataFrame (Trinary features)
+  """
+  df = df_X.copy()
+  if max_var is None:
+    return df
+  #
+  df.index = [i[0:-2] for i in df_X.index]
+  df = df.sort_index()
+  ser = df.groupby(df.index).std().sum()
+  ser = ser.sort_values()
+  ser_sub = ser[ser <= max_var]
+  columns = list(ser_sub.index)
+  return df_X[columns]
