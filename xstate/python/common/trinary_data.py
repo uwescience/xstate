@@ -85,19 +85,36 @@ def _getTrinaryFromGeneLists(
   return pd.DataFrame(ser)
 
 def getSampleData(is_regulator=True,
-    is_display_errors=False):
+    is_display_errors=False, is_curated_ref=True):
   """
   Acquires data obtain from other soruces.
   :param bool is_regulator: use regulators for TRN
+  :param bool is_curated_ref: use the DataProvider
+      T0 data as the reference data
   :return SampleData. Each element is pd.DataFrame:
       columns: feature
       index: condition
       values: trinary
   """
-  df_AM_MDM = transform_data.trinaryReadsDF(
-      is_display_errors=is_display_errors,
-      csv_file=FILE_AM_MDM,
-      is_time_columns=False).T
+  if is_curated_ref:
+    df_AM_MDM = transform_data.trinaryReadsDF(
+        is_display_errors=is_display_errors,
+        csv_file=FILE_AM_MDM,
+        is_time_columns=False).T
+  else:
+    # Use early AM as reference data
+    df_data = transform_data.readGeneCSV(csv_dir=cn.SAMPLES_DIR,
+        csv_file=FILE_AM_MDM).T
+    ref_idxs = [i for i in df_data.index if "AM" in i]
+    df_ref = df_data.loc[ref_idxs, :]
+    ser_ref = df_ref.mean()
+    sample_idxs = list(set(df_data.index).difference(ref_idxs))
+    df_sample = df_data.loc[sample_idxs, :]
+    df_AM_MDM = transform_data.trinaryReadsDF(
+        is_display_errors=is_display_errors,
+        df_sample=df_sample.T,
+        ser_ref=ser_ref,
+        is_time_columns=False).T
   if is_regulator:
     df_AM_MDM = _subsetToRegulators(df_AM_MDM)
   #

@@ -89,6 +89,7 @@ def readGeneCSV(csv_file, csv_dir=cn.SAMPLES_DIR):
 
 def trinaryReadsDF(csv_file=None, df_sample=None,
     csv_dir=cn.SAMPLES_DIR, is_display_errors=True,
+    ser_ref=None,
     is_time_columns=True, col_ref=None):
   """
   Creates trinary values for read counts w.r.t. data provider.
@@ -100,32 +101,37 @@ def trinaryReadsDF(csv_file=None, df_sample=None,
       columns are: "GENE_ID", instance ids
   :param pd.DataFrame df_sample: columns are genes,
       index are instances, values are raw readcounts
+  :param pd.Series ser_ref: Reference values for
+      calculating expression levels
+  :param bool is_time_columns: a time column is present
   :param str csv_dir: directory where csv file is found
-  :param str ref_col: column to use as reference in
+  :param str col_ref: column to use as reference in
       normalization
   :return pd.DataFrame: columns are genes, 
       indexes are instances, trinary values
   Exactly one of df_sample and csv_file must be non-null
   """
-  provider = DataProvider(
-      is_display_errors=is_display_errors)
+  provider = DataProvider(is_display_errors=is_display_errors)
   provider.do()
+  # Get the sample data to transform 
   if df_sample is None:
     df_sample = readGeneCSV(csv_file, csv_dir=csv_dir)
-  #
+  # Normalize the samples
   df_normalized = provider.normalizeReadsDF(df_sample,
       is_time_columns=is_time_columns)
-  # Compute trinary values relative to original reads
-  if col_ref is None:
-    dfs = copy.deepcopy(provider.dfs_adjusted_read_count)
-    for df in dfs:
-      df.columns = stripReplicaString(df.columns)
-    df_ref = sum(dfs) / len(provider.dfs_adjusted_read_count)
-    col_name = provider.getT0s(df_ref)[0]
-    ser_ref = df_ref[col_name]
-  else:
-    ser_ref = df_normalized[col_ref]
-    del df_normalized[col_ref]
+  # Construct the reference data
+  if ser_ref is None:
+    # Compute trinary values relative to original reads
+    if col_ref is None:
+      dfs = copy.deepcopy(provider.dfs_adjusted_read_count)
+      for df in dfs:
+        df.columns = stripReplicaString(df.columns)
+      df_ref = sum(dfs) / len(provider.dfs_adjusted_read_count)
+      col_name = provider.getT0s(df_ref)[0]
+      ser_ref = df_ref[col_name]
+    else:
+      ser_ref = df_normalized[col_ref]
+      del df_normalized[col_ref]
   return calcTrinaryComparison(df_normalized, ser_ref=ser_ref)
 
 def calcTrinaryComparison(df, ser_ref=None, threshold=1, is_convert_log2=True):
@@ -144,7 +150,7 @@ def calcTrinaryComparison(df, ser_ref=None, threshold=1, is_convert_log2=True):
   """
   MINVAL = 1e-12
   if is_convert_log2:
-    if not ser_ref is None:
+    if ser_ref is not None:
       ser_ref_log = ser_ref.apply(lambda v: np.log2(v))
     df_log = df.applymap(lambda v: np.log2(v)
         if v > MINVAL else np.log2(MINVAL))
@@ -155,9 +161,10 @@ def calcTrinaryComparison(df, ser_ref=None, threshold=1, is_convert_log2=True):
   if ser_ref is None:
     ser_ref_log = pd.Series(np.repeat(0, len(df)), index=df.index)
   #
-  df_comp = pd.DataFrame()
-  for col in df.columns:
-    df_comp[col] = df_log[col] - ser_ref_log
+  df_comp = df_log.copy()
+  df_comp_T = df_log.T - ser_ref_log
+  # Drop the nan columns, those genes for which there is no reference
+  df_comp = (df_comp_T.dropna(axis=1, how='all')).T
   df_result = df_comp.applymap(
       lambda v: 0 if np.abs(v) < threshold else -1 if v < 0 else 1)
   return df_result
