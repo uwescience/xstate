@@ -105,7 +105,7 @@ def getSampleData(is_regulator=True,
     # Use early AM as reference data
     df_data = transform_data.readGeneCSV(csv_dir=cn.SAMPLES_DIR,
         csv_file=FILE_AM_MDM).T
-    ref_idxs = [i for i in df_data.index if "AM" in i]
+    ref_idxs = [i for i in df_data.index if ("AM" in i) and (not "1" in i)]
     df_ref = df_data.loc[ref_idxs, :]
     ser_ref = df_ref.mean()
     sample_idxs = list(set(df_data.index).difference(ref_idxs))
