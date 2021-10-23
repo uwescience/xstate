@@ -1,4 +1,5 @@
 from common import data_provider
+from common.trinary_data import TrinaryData
 import common.constants as cn
 from common_python.testing import helpers
 from common_python.util.persister import Persister
@@ -12,6 +13,7 @@ import unittest
 
 
 IGNORE_TEST = False
+IS_PLOT = False
 SIZE = 4
 
 
@@ -256,6 +258,34 @@ class TestDataProvider(unittest.TestCase):
         columns))
     self.assertEqual(len(df), len(df_normalized))
     #ser_length = provider.df_gene_description[cn.LENGTH]
+
+  def testGetStages(self):
+    if IGNORE_TEST:
+      return
+    self.provider.do()
+    timepoints = ["T1", "T25"]
+    results = self.provider.getStages(timepoints)
+    self.assertEqual(results[0], "Normoxia")
+    self.assertEqual(results[1], "Resuscitation")
+    #
+    timepoints = "T1"
+    result = self.provider.getStages(timepoints)
+    self.assertEqual(result, "Normoxia")
+
+  def testGetStageNames(self):
+    if IGNORE_TEST:
+      return
+    self.provider.do()
+    trinary = TrinaryData()
+    result1s = self.provider.getStageNames(trinary.ser_y)
+    count = len(set(trinary.ser_y.values))
+    self.assertEqual(len(result1s), count)
+    #
+    ser_y = trinary.ser_y.copy()
+    indices = [i + ".0" for i in ser_y.index]
+    ser_y.index = indices
+    result2s = self.provider.getStageNames(trinary.ser_y)
+    self.assertTrue(all([v1 == v2 for v1, v2 in zip (result1s, result2s)]))
 
 
 if __name__ == '__main__':

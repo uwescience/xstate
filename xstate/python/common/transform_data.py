@@ -134,7 +134,8 @@ def trinaryReadsDF(csv_file=None, df_sample=None,
       del df_normalized[col_ref]
   return calcTrinaryComparison(df_normalized, ser_ref=ser_ref)
 
-def calcTrinaryComparison(df, ser_ref=None, threshold=1, is_convert_log2=True):
+def calcTrinaryComparison(df, ser_ref=None,
+    threshold=1, is_convert_log2=True):
   """
   Calculates trinary values of a DataFrame w.r.t. a reference in
   log2 units.

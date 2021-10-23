@@ -84,49 +84,85 @@ def _getTrinaryFromGeneLists(
   ser.loc[induceds] = 1
   return pd.DataFrame(ser)
 
+# TODO: TEST
 def getSampleData(is_regulator=True,
-    is_display_errors=False, is_curated_ref=True):
+    is_display_errors=False, is_bioreactor_ref=True):
   """
   Acquires data obtain from other soruces.
   :param bool is_regulator: use regulators for TRN
-  :param bool is_curated_ref: use the DataProvider
+  :param bool is_bioreactor_ref: use the DataProvider
       T0 data as the reference data
   :return SampleData. Each element is pd.DataFrame:
       columns: feature
       index: condition
       values: trinary
   """
-  if is_curated_ref:
+  def makeSamples(csv_file, ref_sel_func, is_time_columns, df_data=None):
+    """
+    Constructs samples with to reference instances.
+
+    Parameters
+    ----------
+    csv_file: str
+        CSV file for the sample data
+    ref_sel_func: function
+        parameters: dataframe index (str)
+        returns: bool (include if True)
+    is_time_columns: bool
+        has a "time" column
+    df_data: dataframe
+        count data
+    Returns
+    -------
+    DataFrame: Trinary values of samples
+    """
+    if df_data is None:
+      df_data = transform_data.readGeneCSV(csv_dir=cn.SAMPLES_DIR,
+          csv_file=csv_file).T
+    provider = DataProvider(is_display_errors=False)
+    provider.do()
+    df_normalized = provider.normalizeReadsDF(
+        df_data.T, is_time_columns=False).T
+    ref_idxs = [i for i in df_normalized.index if ref_sel_func(i)]
+    df_ref = df_normalized.loc[ref_idxs, :]
+    ser_ref = df_ref.mean()
+    sample_idxs = list(set(df_normalized.index).difference(ref_idxs))
+    df_sample_raw = df_normalized.loc[sample_idxs, :]
+    df_sample_trinary = transform_data.calcTrinaryComparison(df_sample_raw.T,
+        ser_ref=ser_ref).T
+    return df_sample_trinary
+  #
+  # AM/MDM
+  if is_bioreactor_ref:
     df_AM_MDM = transform_data.trinaryReadsDF(
         is_display_errors=is_display_errors,
         csv_file=FILE_AM_MDM,
         is_time_columns=False).T
   else:
-    # Use early AM as reference data
-    df_data = transform_data.readGeneCSV(csv_dir=cn.SAMPLES_DIR,
-        csv_file=FILE_AM_MDM).T
-    ref_idxs = [i for i in df_data.index if ("AM" in i) and (not "1" in i)]
-    df_ref = df_data.loc[ref_idxs, :]
-    ser_ref = df_ref.mean()
-    sample_idxs = list(set(df_data.index).difference(ref_idxs))
-    df_sample = df_data.loc[sample_idxs, :]
-    df_AM_MDM = transform_data.trinaryReadsDF(
-        is_display_errors=is_display_errors,
-        df_sample=df_sample.T,
-        ser_ref=ser_ref,
-        is_time_columns=False).T
+    ref_sel_func = lambda i: ("AM" in i) and (not "1" in i)
+    df_AM_MDM = makeSamples(FILE_AM_MDM, ref_sel_func, False)
   if is_regulator:
     df_AM_MDM = _subsetToRegulators(df_AM_MDM)
-  #
-  df_AW = transform_data.trinaryReadsDF(
-      csv_file=FILE_AW,
-      is_display_errors=is_display_errors,
-      is_time_columns=False).T
+  # AW
+  if is_bioreactor_ref:
+    df_AW = transform_data.trinaryReadsDF(
+        csv_file=FILE_AW,
+        is_display_errors=is_display_errors,
+        is_time_columns=False).T
+  else:
+    ref_sel_func = lambda i: ("neg" in i) and (not "1" in i)
+    df_AW = makeSamples(FILE_AW, ref_sel_func, False)
   if is_regulator:
     df_AW = _subsetToRegulators(df_AW)
-  #
-  df_galagan = _getGalaganData(
-      is_display_errors=is_display_errors)
+  # Galagn data
+  if is_bioreactor_ref:
+    df_galagan = _getGalaganData(
+        is_display_errors=is_display_errors, is_trinary=True)
+  else:
+    df_data = _getGalaganData(
+        is_display_errors=is_display_errors, is_trinary=False)
+    ref_sel_func = lambda i: ("d1." in i) and ("rep1" not in i)
+    df_galagan = makeSamples(None, ref_sel_func, False, df_data=df_data)
   if is_regulator:
     df_galagan = _subsetToRegulators(df_galagan)
   df_sherman = _getTrinaryFromGeneLists()
@@ -134,10 +170,14 @@ def getSampleData(is_regulator=True,
   if is_regulator:
     df_sherman = _subsetToRegulators(df_sherman)
   # Add Rustad data
-  df_rustad = transform_data.trinaryReadsDF(
-      csv_file=FILE_RUSTAD,
-      is_display_errors=is_display_errors,
-      is_time_columns=False).T
+  if is_bioreactor_ref:
+    df_rustad = transform_data.trinaryReadsDF(
+        csv_file=FILE_RUSTAD,
+        is_display_errors=is_display_errors,
+        is_time_columns=False).T
+  else:
+    ref_sel_func = lambda i: ("_4hr_" in i) and ("rep6" not in i)
+    df_rustad = makeSamples(FILE_RUSTAD, ref_sel_func, False)
   if is_regulator:
     df_rustad = _subsetToRegulators(df_rustad)
   #
@@ -150,11 +190,13 @@ def getSampleData(is_regulator=True,
       )
   return sample_data
 
-def _getGalaganData(is_display_errors=False):
+def _getGalaganData(is_trinary=True, is_display_errors=False):
   """
   Constructs trinary values for Galagan data.
   These data are normalized and in log2 units.
   The 10h data are Normoxia.
+  :param bool is_trinary: convert to Trinary
+  :param bool is_display_errors:
   :return pd.DataFrame:
       columns: genes
       index: time instances
@@ -173,9 +215,12 @@ def _getGalaganData(is_display_errors=False):
     df = df.apply(lambda c: c - df_galagan[col_ref])
     dfs.append(df)
   df_merge = pd.concat(dfs, axis=1)
-  df_trinary = df_merge.applymap(lambda v:
-    1 if v >= 1 else -1 if v <= -1 else 0)
-  return df_trinary.T
+  if is_trinary:
+    df_trinary = df_merge.applymap(lambda v:
+      1 if v >= 1 else -1 if v <= -1 else 0)
+    return df_trinary.T
+  else:
+    return df_merge.T
 
 def serializeFeatureMatrix(df_X, path):
   """

@@ -489,6 +489,46 @@ class DataProvider(object):
           [center(df) for df in self.dfs_adjusted_read_count]
     return self._dfs_centered_adjusted_read_count
 
+  def getStageNames(self, ser_y):
+    """
+    Provides the list of stage names that correspond to the state indexes.
+
+    Parameters
+    ----------
+    ser_y: Series
+    
+    Returns
+    -------
+    list-str
+    """
+    names = np.repeat(None, ser_y.max() + 1)
+    last_name = None
+    for timepoint, value in ser_y.iteritems():
+      if "." in timepoint:
+        new_timepoint = timepoint[0:-2]
+      else:
+        new_timepoint = timepoint
+      names[value] = self.getStages(new_timepoint)
+    return names
+
+  def getStages(self, timepoints):
+    """
+    Returns the names of stages for the timepoints.
+
+    Parameters
+    ----------
+    timepoints: str/list-str
+    
+    Returns
+    -------
+    str/np.array-str
+    """
+    if isinstance(timepoints, str):
+      result = self.df_stage_matrix["name"].loc[[timepoints]].values[0]
+    else:
+      result = self.df_stage_matrix["name"].loc[timepoints].values
+    return result
+
   def do(self, data_dir=cn.DATA_DIR):
     """
     Assigns values to the instance data.
