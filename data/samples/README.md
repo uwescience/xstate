@@ -21,3 +21,17 @@ The AMs had a significant overlap with early/mid hypoxia differentially expresse
    * 4 replications
    * Data is already in normalized and in units of log2 w.r.t. reference
    * Dual array so that there is a reference for each sample
+
+## GSE167232\_mtb\_transcriptome\_counts\_normalized.csv
+From Eliza on 10/24/2021.
+The data is from Pisu et al 2021 (attached), it is MTB from lung macrophages of infected mice, sorted on the MTB expression of a stress reporter gene (hspX). These are the TB_HIGH and TB_LOW samples. The other samples are from Pisu et al 2020, it is MTB from either alveolar macrophages (AM) or interstitial macrophages (IM) of infected mice.
+The data are normalized for library size and gene size but are not
+in log2 units.
+
+
+``GSE167232\_mtb\_transcriptome\_counts\_normalized\_filtered.csv``
+is the same data but removes all lines with "N/A" and deletes the
+"Gene\_name" column.
+
+Notes
+1. Has duplicate values for gene Rv0687

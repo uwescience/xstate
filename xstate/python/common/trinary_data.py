@@ -5,7 +5,7 @@ df_X - feature matrix values with numeric column names.
        T0 is deleted
 ser_y - state values
 features - names of genes
-state_dict - dictionary mapping string names to numbers
+state_dct - dictionary mapping string names to numbers
 """
 
 import common.constants as cn
@@ -26,11 +26,12 @@ FILE_GALAGAN = "galagan_raw_hypoxia_ts.csv"
 FILE_AM_MDM = "AM_MDM_Mtb_transcripts_DEseq.csv"
 FILE_AW = "AW_plus_v_AW_neg_Mtb_transcripts_DEseq.csv"
 FILE_RUSTAD = "rustad_hypoxia_dataset_GSE9331.csv"
+FILE_GSE167232 = "GSE167232_mtb_transcriptome_counts_normalized_filtered.csv"
 SHERMAN_INDUCED_PATH = os.path.join(cn.SAMPLES_DIR,
     "sherman_induced_mtb.txt")
 SHERMAN_REPRESSED_PATH = os.path.join(cn.SAMPLES_DIR,
     "sherman_repressed_mtb.txt")
-SAMPLES = ["AM_MDM", "AW", "sherman", "galagan", "rustad"]
+SAMPLES = ["AM_MDM", "AW", "sherman", "galagan", "rustad", "GSE167232"]
 SampleData = collections.namedtuple("SampleData",
     SAMPLES)
 
@@ -84,7 +85,6 @@ def _getTrinaryFromGeneLists(
   ser.loc[induceds] = 1
   return pd.DataFrame(ser)
 
-# TODO: TEST
 def getSampleData(is_regulator=True,
     is_display_errors=False, is_bioreactor_ref=True):
   """
@@ -99,7 +99,8 @@ def getSampleData(is_regulator=True,
   """
   def makeSamples(csv_file, ref_sel_func, is_time_columns, df_data=None):
     """
-    Constructs samples with to reference instances.
+    Constructs samples with respect to reference instances within the same
+    data set.
 
     Parameters
     ----------
@@ -111,7 +112,7 @@ def getSampleData(is_regulator=True,
     is_time_columns: bool
         has a "time" column
     df_data: dataframe
-        count data
+        count to be converted into TrinaryData
     Returns
     -------
     DataFrame: Trinary values of samples
@@ -180,6 +181,15 @@ def getSampleData(is_regulator=True,
     df_rustad = makeSamples(FILE_RUSTAD, ref_sel_func, False)
   if is_regulator:
     df_rustad = _subsetToRegulators(df_rustad)
+  # GSE167232
+  #
+  df_GSE167232 = transform_data.trinaryReadsDF(
+      csv_file=FILE_GSE167232,
+      is_display_errors=is_display_errors,
+      is_normalized=True,
+      is_time_columns=False).T
+  if is_regulator:
+    df_GSE167232 = _subsetToRegulators(df_GSE167232)
   #
   sample_data = SampleData(
       AM_MDM=df_AM_MDM,
@@ -187,6 +197,7 @@ def getSampleData(is_regulator=True,
       sherman=df_sherman,
       galagan=df_galagan,
       rustad=df_rustad,
+      GSE167232=df_GSE167232,
       )
   return sample_data
 
@@ -257,7 +268,7 @@ class NormalizedData(object):
     Public instance variables:
       df_X are normalized read counts
       ser_y - numeric value of state corresponding to each row in df_X
-      self.state_dict:
+      self.state_dct:
           key: state name
           value: state index
       self.features: list of names of gene
@@ -293,15 +304,15 @@ class NormalizedData(object):
     ser_y = ser_y.drop(self._getDropIndices(ser_y.index))
     # Equate Normoxia and Resuscitation if there are too
     # few states
+    states = ["Normoxia", "Transition", "Stage1a", "Stage1b", "StageII",
+        "Resuscitation"]
     if len(ser_y[ser_y == cn.STATE_NORMOXIA])  \
         <= MIN_NUM_NORMOXIA:
-      ser_y[ser_y == cn.STATE_NORMOXIA]  \
-          = cn.STATE_RESCUSCITATION
+      ser_y[ser_y == cn.STATE_NORMOXIA] = cn.STATE_RESCUSCITATION
+      states.remove("Normoxia")
     # Create converter from state name to numeric index
-    states = ser_y.unique()
-    self.state_dict = {k: v for v, k in enumerate(states)}
-    self.ser_y = ser_y.apply(
-        lambda k: self.state_dict[k])
+    self.state_dct = {k: v for v, k in enumerate(states)}
+    self.ser_y = ser_y.apply( lambda k: self.state_dct[k])
 
   def _getDropIndices(self, indices,
       drop_index=cn.TIME_0):

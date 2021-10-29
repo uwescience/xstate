@@ -10,8 +10,8 @@ import pandas as pd
 import unittest
 
 
-IGNORE_TEST = False
-IS_PLOT = False
+IGNORE_TEST = True
+IS_PLOT = True
 NUM_REPL = 3
 DIR = os.path.dirname(os.path.abspath(__file__))
 TEST_SAMPLE_PATH = os.path.join(DIR, "sample.csv")
@@ -59,7 +59,7 @@ class TestTrinaryData(unittest.TestCase):
       self.assertTrue(isinstance(data.df_X, pd.DataFrame))
       self.assertTrue(isinstance(data.ser_y, pd.Series))
       self.assertTrue(isinstance(data.features, list))
-      self.assertTrue(isinstance(data.state_dict, dict))
+      self.assertTrue(isinstance(data.state_dct, dict))
       self.assertTrue(helpers.isValidDataFrame(data.df_X,
           data.df_X.columns))
       self.assertEqual(len(data.df_X.columns),
@@ -114,8 +114,7 @@ class TestTrinaryData(unittest.TestCase):
         df.columns))
 
   def testGetSampleData(self):
-    if IGNORE_TEST:
-      return
+    # TESTING
     def getDFS(sample):
       return [sample.AW, sample.AM_MDM, sample.galagan,
           sample.sherman]
@@ -146,7 +145,7 @@ class TestTrinaryData(unittest.TestCase):
     for name in trinary_data.SAMPLES:
       df_not_bioreactor = sample_not_bioreactor_ref.__getattribute__(name)
       df_bioreactor = sample_reg.__getattribute__(name)
-      if name != "sherman":
+      if name not in ["sherman", "GSE167232"]:
         self.assertGreater(len(df_bioreactor), len(df_not_bioreactor))
       else:
         self.assertEqual(len(df_bioreactor), len(df_not_bioreactor))
