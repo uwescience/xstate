@@ -91,7 +91,7 @@ def trinaryReadsDF(csv_file=None, df_sample=None,
     csv_dir=cn.SAMPLES_DIR, is_display_errors=True,
     ser_ref=None,
     is_normalized=False,
-    is_time_columns=True, col_ref=None):
+    is_time_columns=True, col_ref=None, is_convert_log2=True):
   """
   Creates trinary values for read counts w.r.t. data provider.
   (a) adjusting for gene length, (b) library size,
@@ -137,7 +137,8 @@ def trinaryReadsDF(csv_file=None, df_sample=None,
     else:
       ser_ref = df_normalized[col_ref]
       del df_normalized[col_ref]
-  df = calcTrinaryComparison(df_normalized, ser_ref=ser_ref)
+    df = calcTrinaryComparison(df_normalized, ser_ref=ser_ref,
+        is_convert_log2=is_convert_log2)
   return df
 
 def calcTrinaryComparison(df, ser_ref=None,

@@ -10,8 +10,8 @@ import pandas as pd
 import unittest
 
 
-IGNORE_TEST = True
-IS_PLOT = True
+IGNORE_TEST = False
+IS_PLOT = False
 NUM_REPL = 3
 DIR = os.path.dirname(os.path.abspath(__file__))
 TEST_SAMPLE_PATH = os.path.join(DIR, "sample.csv")
@@ -113,20 +113,27 @@ class TestTrinaryData(unittest.TestCase):
     self.assertTrue(helpers.isValidDataFrame(df,
         df.columns))
 
+  def testGetGSE167232(self):
+    if IGNORE_TEST:
+      return
+    is_regulator = False
+    is_display_errors = True
+    lastDF = trinary_data._getGSE167232(is_regulator, is_display_errors)
+    for _ in range(5):
+      newDF = trinary_data._getGSE167232(is_regulator, is_display_errors)
+      self.assertTrue(newDF.equals(lastDF))
+
   def testGetSampleData(self):
-    # TESTING
+    if IGNORE_TEST:
+      return
     def getDFS(sample):
       return [sample.AW, sample.AM_MDM, sample.galagan,
-          sample.sherman]
+          sample.sherman, sample.GSE167232]
     #
-    def test_single(is_regulator=False, is_bioreactor_ref=True):
-      sample = trinary_data.getSampleData(
-          is_display_errors=False,
-          is_bioreactor_ref=is_bioreactor_ref,
-          is_regulator=is_regulator)
+    def test_single(**kwargs):
+      sample = trinary_data.getSampleData(**kwargs)
       for df in getDFS(sample):
-        self.assertTrue(helpers.isValidDataFrame(df,
-            df.columns))
+        self.assertTrue(helpers.isValidDataFrame(df, df.columns))
       return sample
     #
     def test_greater(sample_large, sample_small):
@@ -137,18 +144,15 @@ class TestTrinaryData(unittest.TestCase):
             len(dfs_large[idx].columns),
             len(dfs_small[idx].columns))
     # Non-default reference
-    sample_not_bioreactor_ref = test_single(is_regulator=False,
-        is_bioreactor_ref=False)
-    sample_reg = test_single(is_regulator=True)
-    sample_full = test_single(is_regulator=False)
-    test_greater(sample_full, sample_reg)
-    for name in trinary_data.SAMPLES:
-      df_not_bioreactor = sample_not_bioreactor_ref.__getattribute__(name)
-      df_bioreactor = sample_reg.__getattribute__(name)
-      if name not in ["sherman", "GSE167232"]:
-        self.assertGreater(len(df_bioreactor), len(df_not_bioreactor))
-      else:
-        self.assertEqual(len(df_bioreactor), len(df_not_bioreactor))
+    ref_types = [
+        trinary_data.REF_TYPE_BIOREACTOR,
+        trinary_data.REF_TYPE_SELF,
+        trinary_data.REF_TYPE_POOLED,
+        ]
+    for ref_type in ref_types:
+      sample_large = test_single(is_regulator=False, ref_type=ref_type)
+      sample_small = test_single(is_regulator=True, ref_type=ref_type)
+      test_greater(sample_large, sample_small)
 
   def testGetTrinaryFromGeneLists(self):
     if IGNORE_TEST:

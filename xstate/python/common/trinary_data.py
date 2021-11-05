@@ -9,6 +9,7 @@ state_dct - dictionary mapping string names to numbers
 """
 
 import common.constants as cn
+from common.msg import writeMessage
 from common.data_provider import DataProvider
 from common import data_provider
 import common.transform_data as transform_data
@@ -34,18 +35,23 @@ SHERMAN_REPRESSED_PATH = os.path.join(cn.SAMPLES_DIR,
 SAMPLES = ["AM_MDM", "AW", "sherman", "galagan", "rustad", "GSE167232"]
 SampleData = collections.namedtuple("SampleData",
     SAMPLES)
+PROVIDER = DataProvider(is_display_errors=False)
+PROVIDER.do()
+# Reference types
+REF_TYPE_BIOREACTOR = "ref_type_bioreactor"  # Use bioreactor data as reference
+REF_TYPE_SELF = "ref_type_self"  # Internal reference
+REF_TYPE_POOLED = "ref_type_pooled"  # Pool the data to get a reference
 
 
 ################## FUNCTIONS ###############
-def _subsetToRegulators(df_X):
-  provider = DataProvider()
-  provider.do()
-  regulators = provider.df_trn_unsigned[cn.TF]
+def _subsetToRegulators(df):
+  regulators = PROVIDER.df_trn_unsigned[cn.TF]
   regulators = list(set(regulators))
-  keys = set(df_X.columns).intersection(
-      regulators)
-  return df_X[list(keys)]
-
+  regulator_cols = list(set(df.columns).intersection(regulators))
+  for column in df.columns:
+    if not column in regulator_cols:
+      del df[column]
+#
 def _getTrinaryFromGeneLists(
     repressed_path=SHERMAN_REPRESSED_PATH,
     induced_path=SHERMAN_INDUCED_PATH):
@@ -66,9 +72,7 @@ def _getTrinaryFromGeneLists(
       index: gene
       value: trinary     
   """
-  provider = DataProvider()
-  provider.do()
-  genes = provider.dfs_read_count[0].index.tolist()
+  genes = PROVIDER.dfs_read_count[0].index.tolist()
   #
   def get_list(path):
     if path is None:
@@ -86,18 +90,21 @@ def _getTrinaryFromGeneLists(
   return pd.DataFrame(ser)
 
 def getSampleData(is_regulator=True,
-    is_display_errors=False, is_bioreactor_ref=True):
+    is_display_errors=False,
+    ref_type=REF_TYPE_BIOREACTOR,
+    ):
   """
   Acquires data obtain from other soruces.
   :param bool is_regulator: use regulators for TRN
-  :param bool is_bioreactor_ref: use the DataProvider
+  :param str ref_type: indicates the type of reference value
       T0 data as the reference data
   :return SampleData. Each element is pd.DataFrame:
-      columns: feature
+      columns: Gene
       index: condition
       values: trinary
   """
-  def makeSamples(csv_file, ref_sel_func, is_time_columns, df_data=None):
+  def makeSamples(csv_file, calcRef, is_time_columns, df_data=None,
+      is_convert_log2=True):
     """
     Constructs samples with respect to reference instances within the same
     data set.
@@ -105,10 +112,10 @@ def getSampleData(is_regulator=True,
     Parameters
     ----------
     csv_file: str
-        CSV file for the sample data
-    ref_sel_func: function
-        parameters: dataframe index (str)
-        returns: bool (include if True)
+        CSV file for the sample data if df_data == None
+    calcRef: Function
+        parameters: DataFrame
+        returns: Series
     is_time_columns: bool
         has a "time" column
     df_data: dataframe
@@ -120,76 +127,101 @@ def getSampleData(is_regulator=True,
     if df_data is None:
       df_data = transform_data.readGeneCSV(csv_dir=cn.SAMPLES_DIR,
           csv_file=csv_file).T
-    provider = DataProvider(is_display_errors=False)
-    provider.do()
-    df_normalized = provider.normalizeReadsDF(
+    df_normalized = PROVIDER.normalizeReadsDF(
         df_data.T, is_time_columns=False).T
-    ref_idxs = [i for i in df_normalized.index if ref_sel_func(i)]
-    df_ref = df_normalized.loc[ref_idxs, :]
-    ser_ref = df_ref.mean()
-    sample_idxs = list(set(df_normalized.index).difference(ref_idxs))
-    df_sample_raw = df_normalized.loc[sample_idxs, :]
-    df_sample_trinary = transform_data.calcTrinaryComparison(df_sample_raw.T,
-        ser_ref=ser_ref).T
+    ser_ref = calcRef(df_normalized)
+    df_sample_trinary = transform_data.calcTrinaryComparison(df_normalized.T,
+        ser_ref=ser_ref, is_convert_log2=is_convert_log2).T
     return df_sample_trinary
   #
+  def calcRefFromIndices(df, sel_ref_func):
+    ref_idxs = [i for i in df.index if ref_sel_func(i)]
+    df_ref = df.loc[ref_idxs, :]
+    return df_ref.mean()
+  #
+  def calcRefPool(df):
+    return df.mean(axis=0)
+  #
   # AM/MDM
-  if is_bioreactor_ref:
+  if (ref_type == REF_TYPE_BIOREACTOR):
     df_AM_MDM = transform_data.trinaryReadsDF(
         is_display_errors=is_display_errors,
         csv_file=FILE_AM_MDM,
         is_time_columns=False).T
-  else:
+  elif (ref_type == REF_TYPE_SELF):
     ref_sel_func = lambda i: ("AM" in i) and (not "1" in i)
-    df_AM_MDM = makeSamples(FILE_AM_MDM, ref_sel_func, False)
-  if is_regulator:
-    df_AM_MDM = _subsetToRegulators(df_AM_MDM)
+    def calcRef(df):
+      return calcRefFromIndices(df, ref_sel_func)
+    df_AM_MDM = makeSamples(FILE_AM_MDM, calcRef, False)
+  else:
+    df_AM_MDM = makeSamples(FILE_AM_MDM, calcRefPool, False)
   # AW
-  if is_bioreactor_ref:
+  if (ref_type == REF_TYPE_BIOREACTOR):
     df_AW = transform_data.trinaryReadsDF(
         csv_file=FILE_AW,
         is_display_errors=is_display_errors,
         is_time_columns=False).T
-  else:
+  elif (ref_type == REF_TYPE_SELF):
     ref_sel_func = lambda i: ("neg" in i) and (not "1" in i)
-    df_AW = makeSamples(FILE_AW, ref_sel_func, False)
-  if is_regulator:
-    df_AW = _subsetToRegulators(df_AW)
+    def calcRef(df):
+      return calcRefFromIndices(df, ref_sel_func)
+    df_AW = makeSamples(FILE_AW, calcRef, False)
+  else: # Pooled
+    df_AW = makeSamples(FILE_AW, calcRefPool, False)
+  df_AW = df_AW.sort_index()
   # Galagn data
-  if is_bioreactor_ref:
+  if (ref_type == REF_TYPE_BIOREACTOR):
     df_galagan = _getGalaganData(
         is_display_errors=is_display_errors, is_trinary=True)
-  else:
+  elif (ref_type == REF_TYPE_SELF):
     df_data = _getGalaganData(
         is_display_errors=is_display_errors, is_trinary=False)
     ref_sel_func = lambda i: ("d1." in i) and ("rep1" not in i)
-    df_galagan = makeSamples(None, ref_sel_func, False, df_data=df_data)
-  if is_regulator:
-    df_galagan = _subsetToRegulators(df_galagan)
+    def calcRef(df):
+      return calcRefFromIndices(df, ref_sel_func)
+    df_galagan = makeSamples(None, calcRef, False, df_data=df_data,
+        is_convert_log2=False)
+  else:  # Pooled
+    df_data = _getGalaganData(
+        is_display_errors=is_display_errors, is_trinary=False)
+    df_galagan = makeSamples(None, calcRefPool, False, df_data=df_data,
+        is_convert_log2=False)
+  #
   df_sherman = _getTrinaryFromGeneLists()
   df_sherman = df_sherman.transpose()
-  if is_regulator:
-    df_sherman = _subsetToRegulators(df_sherman)
-  # Add Rustad data
-  if is_bioreactor_ref:
+  # Rustad
+  if (ref_type == REF_TYPE_BIOREACTOR):
     df_rustad = transform_data.trinaryReadsDF(
         csv_file=FILE_RUSTAD,
         is_display_errors=is_display_errors,
+        is_convert_log2=False,
         is_time_columns=False).T
-  else:
+  elif (ref_type == REF_TYPE_SELF):
     ref_sel_func = lambda i: ("_4hr_" in i) and ("rep6" not in i)
-    df_rustad = makeSamples(FILE_RUSTAD, ref_sel_func, False)
-  if is_regulator:
-    df_rustad = _subsetToRegulators(df_rustad)
+    def calcRef(df):
+      return calcRefFromIndices(df, ref_sel_func)
+    df_rustad = makeSamples(FILE_RUSTAD, calcRef, False, is_convert_log2=False)
+  else: # pooled
+    df_rustad = makeSamples(FILE_RUSTAD, calcRefPool, False,
+        is_convert_log2=False)
   # GSE167232
-  #
-  df_GSE167232 = transform_data.trinaryReadsDF(
-      csv_file=FILE_GSE167232,
-      is_display_errors=is_display_errors,
-      is_normalized=True,
-      is_time_columns=False).T
+  if (ref_type == REF_TYPE_BIOREACTOR) or (ref_type == REF_TYPE_SELF):
+    if (ref_type == REF_TYPE_SELF):
+      message = "\n**No self reference defined for GSE167232."
+      message += " Using bioreactor data.\n"
+      writeMessage(message)
+    df_GSE167232 = transform_data.trinaryReadsDF(
+        csv_file=FILE_GSE167232,
+        is_display_errors=is_display_errors,
+        is_normalized=True,
+        is_time_columns=False).T
+  else: # pooled
+    df_GSE167232 = makeSamples(FILE_GSE167232, calcRefPool, False)
+  # Restrict to regulators?
   if is_regulator:
-    df_GSE167232 = _subsetToRegulators(df_GSE167232)
+    for df in [df_AM_MDM, df_AW, df_sherman, df_galagan,
+        df_rustad, df_GSE167232]:
+      _subsetToRegulators(df)
   #
   sample_data = SampleData(
       AM_MDM=df_AM_MDM,
@@ -200,6 +232,16 @@ def getSampleData(is_regulator=True,
       GSE167232=df_GSE167232,
       )
   return sample_data
+
+def _getGSE167232(is_regulator, is_display_errors):
+  df = transform_data.trinaryReadsDF(
+      csv_file=FILE_GSE167232,
+      is_display_errors=is_display_errors,
+      is_normalized=True,
+      is_time_columns=False).T
+  if is_regulator:
+    _subsetToRegulators(df)
+  return df
 
 def _getGalaganData(is_trinary=True, is_display_errors=False):
   """
@@ -287,7 +329,7 @@ class NormalizedData(object):
     drop_indices = self._getDropIndices(self.df_X.index)
     self.df_X = self.df_X.drop(drop_indices)
     if is_regulator:
-      self.df_X = _subsetToRegulators(self.df_X)
+      _subsetToRegulators(self.df_X)
     self.features = self.df_X.columns.tolist()
     # Create class information
     ser_y = self.provider.df_stage_matrix[cn.STAGE_NAME]
@@ -313,6 +355,9 @@ class NormalizedData(object):
     # Create converter from state name to numeric index
     self.state_dct = {k: v for v, k in enumerate(states)}
     self.ser_y = ser_y.apply( lambda k: self.state_dct[k])
+    if not isinstance(self.ser_y, pd.Series):
+      import pdb; pdb.set_trace()
+      pass
 
   def _getDropIndices(self, indices,
       drop_index=cn.TIME_0):
