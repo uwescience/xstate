@@ -103,6 +103,9 @@ def getSampleData(is_regulator=True,
       index: condition
       values: trinary
   """
+  COL_TIME = "time"
+  COL_REP = "rep"
+  COL_CONDITION = "condition"
   def makeSamples(csv_file, calcRef, is_time_columns, df_data=None,
       is_convert_log2=True):
     """
@@ -204,6 +207,17 @@ def getSampleData(is_regulator=True,
   else: # pooled
     df_rustad = makeSamples(FILE_RUSTAD, calcRefPool, False,
         is_convert_log2=False)
+  # Construct the major sor index for rustad
+  time_vals = ["4hr", "8hr", "12hr", "1day", "4day", "7day"]
+  reps  = [i.split("_")[-1] for i in df_rustad.index]
+  times  = [i.split("_")[-2] for i in df_rustad.index]
+  conditions = ["_".join(i.split("_")[0:2]) for i in df_rustad.index]
+  df_rustad[COL_TIME] = [time_vals.index(v) for v in times]
+  df_rustad[COL_REP] = reps
+  df_rustad[COL_CONDITION] = conditions
+  df_rustad = df_rustad.sort_values([COL_CONDITION, COL_TIME, COL_REP])
+  for col in [COL_REP, COL_TIME, COL_CONDITION]:
+    del df_rustad[col]
   # GSE167232
   if (ref_type == REF_TYPE_BIOREACTOR) or (ref_type == REF_TYPE_SELF):
     if (ref_type == REF_TYPE_SELF):
