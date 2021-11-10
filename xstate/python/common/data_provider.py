@@ -86,6 +86,11 @@ SEPARATOR = "."  # Separator used in time columns to indicate replication
 TRN_COLUMNS = [cn.TF, cn.GENE_ID, cn.SIGN]
 
 
+##################### FUNCTIONS #####################
+def calcRefDefault(df):
+  return df[cn.TIME_0]
+
+
 ############################### CLASSES #########################
 class DataProvider(object):
   # Instance variables in the class
@@ -116,12 +121,25 @@ class DataProvider(object):
   def __init__(self, data_dir=cn.DATA_DIR,
       is_normalized_wrtT0=True,
       is_only_qgenes=True,
-      is_display_errors=True):
+      is_display_errors=True,
+      calcRef=calcRefDefault):
     """
     :param bool is_normalized_wrtT0: normalize data w.r.t. T0
         Otherwise, standardize values using the mean.
     :param bool is_only_qgenes: only include genes included in multi-hypothesis test
+    :param calcRef Function: Calculate reference value for gene expression
+        input: DataFrame
+           columns: instances
+           index: genes
+           values: log2
+        output: series
+           index: genes
+           values: log2
     """
+    #
+    if not is_normalized_wrtT0:
+      raise ValueError("No longer support is_normalized_wrtT0 == False.")
+    self.calcRef = calcRef
     self._data_dir = data_dir
     self._is_normalized_wrtT0 = is_normalized_wrtT0
     self._is_only_qgenes = is_only_qgenes
@@ -284,6 +302,43 @@ class DataProvider(object):
     #
     return dfs
 
+  def calcRefPooled(self, df):
+    """
+    Calculates a reference value that is pooled value of
+    normalized but not log2 counts.
+
+    Parameters
+    ----------
+    df: DataFrame
+        columns: times
+        rows: genes
+        values: log2 of counts
+    
+    Returns
+    -------
+    Series
+        rows: genes
+        values: log2 of counts
+    """
+    df_denormalized = df.applymap(lambda v: 2**v)
+    ser = df_denormalized.mean(axis=1)
+    ser = ser.apply(lambda v: np.log2(v))
+    return ser
+
+  def _getLog2NormalizedReadcounts(self):
+    """
+    Constructs a dataframe of log2 normalized reads.
+    
+    Returns
+    -------
+    DataFrame
+        columns: timeponts
+        index: genes
+        values: log2 of counts
+    """
+    df = self._makeDFFromCSV(FILENAME_NORMALIZED)
+    return df.set_index(cn.GENE_ID)
+
   def _makeNormalizedDF(self):
     """
     Transformation of the "normalized Read Counts" processed by DESeq2.
@@ -295,21 +350,19 @@ class DataProvider(object):
         rows: gene
         columns: time
     """
-    df = self._makeDFFromCSV(FILENAME_NORMALIZED)
-    df = df.set_index(cn.GENE_ID)
-    # Normalize w.r.t. time 0
-    if self._is_normalized_wrtT0:
-      drops = []  # Rows to drop
-      for idx in df.index:
-        values = df.loc[idx, :] - df.loc[idx, cn.TIME_0]
-        df.loc[idx, :] = [max(MIN_LOG2_VALUE,  v) for v in values]
-        if all([v <= MIN_LOG2_VALUE for v in df.loc[idx, :]]):
-          drops.append(idx)
-      df = df.drop(index=drops) # Drop the 0 rows
-    # Normalize by standardizing the row
-    else:
-      for col in df.columns:
-        df[col] = (df[col] - np.mean(df[col])) / np.std(df[col])
+    def defaultCalcRef(df):
+        return df[cn.TIME_0]
+    #
+    df = self._getLog2NormalizedReadcounts()
+    # Normalize w.r.t. the counts
+    drops = []  # Rows to drop
+    ser_ref = self.calcRef(df)
+    for idx in df.index:
+      values = df.loc[idx, :] - ser_ref.loc[idx]
+      df.loc[idx, :] = [max(MIN_LOG2_VALUE,  v) for v in values]
+      if all([v <= MIN_LOG2_VALUE for v in df.loc[idx, :]]):
+        drops.append(idx)
+    df = df.drop(index=drops) # Drop the 0 rows
     # Find genes to keep
     if self._is_only_qgenes:
       keep_genes = self.df_gene_expression_state.index
@@ -534,10 +587,17 @@ class DataProvider(object):
     Assigns values to the instance data.
     """
     persister = Persister(cn.DATA_PROVIDER_PERSISTER_PATH)
+    done = False
     if persister.isExist():
-      provider = persister.get()
-      self._setValues(provider=provider)
-    else:
+      try:
+        provider = persister.get()
+        if "calcRef" in dir(provider):
+          if str(self.calcRef) == str(provider.calcRef):
+            self._setValues(provider=provider)
+            done = True
+      except AttributeError:
+        pass
+    if not done:
       # Gene categorizations
       self.df_ec_terms =  \
           self._makeDFFromCSV(FILENAME_EC_TERMS,

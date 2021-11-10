@@ -287,6 +287,31 @@ class TestDataProvider(unittest.TestCase):
     result2s = self.provider.getStageNames(trinary.ser_y)
     self.assertTrue(all([v1 == v2 for v1, v2 in zip (result1s, result2s)]))
 
+  def testCalcRefPooled(self):
+    if IGNORE_TEST:
+      return
+    df = self.provider._getLog2NormalizedReadcounts()
+    ser = self.provider.calcRefPooled(df)
+    trues = [v >= 0 for v in ser.values]
+    self.assertTrue(all(trues))
+
+  def testMakeNormalizedDF(self):
+    if IGNORE_TEST:
+      return
+    provider = data_provider.DataProvider()
+    self.provider.do()
+    df1 = self.provider._makeNormalizedDF()
+    provider = data_provider.DataProvider(calcRef=self.provider.calcRefPooled)
+    provider.do()
+    df2 = provider._makeNormalizedDF()
+    self.assertTrue(isinstance(df1, pd.DataFrame))
+    self.assertTrue(isinstance(df2, pd.DataFrame))
+    diff = set(df1.columns).symmetric_difference(df2.columns)
+    self.assertEqual(len(diff), 0)
+    self.assertEqual(len(df1), len(df2))
+    self.assertFalse(df1.equals(df2))
+ 
+
 
 if __name__ == '__main__':
-  unittest.main()
+  unittest.main(failfast=True)

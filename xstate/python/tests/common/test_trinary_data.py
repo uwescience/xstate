@@ -1,5 +1,6 @@
 import common.constants as cn
 from common import trinary_data
+from common.data_provider import DataProvider
 from common.trinary_data import TrinaryData, NormalizedData
 from common import trinary_data
 from common_python.testing import helpers
@@ -15,6 +16,8 @@ IS_PLOT = False
 NUM_REPL = 3
 DIR = os.path.dirname(os.path.abspath(__file__))
 TEST_SAMPLE_PATH = os.path.join(DIR, "sample.csv")
+PROVIDER = DataProvider()
+PROVIDER.do()
 
 
 ################### FUNCTIONS ############
@@ -66,6 +69,13 @@ class TestTrinaryData(unittest.TestCase):
           len(data.features))
       self.assertEqual(len(data.df_X),
           len(data.ser_y))
+
+  def testTrinaryRefPooled(self):
+    if IGNORE_TEST:
+      return
+    trinary1 = TrinaryData()
+    trinary2 = TrinaryData(calcRef=PROVIDER.calcRefPooled)
+    self.assertFalse(trinary1.df_X.equals(trinary2.df_X))
 
   def testNonAveraged(self):
     if IGNORE_TEST:
@@ -195,7 +205,6 @@ class TestTrinaryData(unittest.TestCase):
       path = os.path.join(DIR, "%s.csv" % source)
       self.assertTrue(os.path.isfile(path))
     removeFiles()
- 
     
 
 if __name__ == '__main__':

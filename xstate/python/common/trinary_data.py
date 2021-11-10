@@ -56,18 +56,16 @@ def _getTrinaryFromGeneLists(
     repressed_path=SHERMAN_REPRESSED_PATH,
     induced_path=SHERMAN_INDUCED_PATH):
   """
-  Creates a feature vector from a list of indiced
+  Creates a feature vector from a list of induced
   and repressed genes.
 
   Parameters
   ----------
-
   repressed_path: str
   induced_path: str
 
   Return
-  ______
-
+  ------
   pd.DataFrame with single column
       index: gene
       value: trinary     
@@ -315,12 +313,14 @@ def mkFeatureMatrices(sample_data,
 class NormalizedData(object):
   """ Exposes values described above. """
 
-  def __init__(self, is_display_errors=True,
-      is_averaged=True, is_regulator=False):
+  def __init__(self,
+      is_averaged=True, is_regulator=False,
+      **kwargs):
     """
-    :param bool is_display_errors: Shows errors encountered
     :param bool is_averaged: Use averaged read counts
     :param bool is_regulator: use regulators for TRN
+    :param dict kwargs: options passed to DataProvider
+
     Public instance variables:
       df_X are normalized read counts
       ser_y - numeric value of state corresponding to each row in df_X
@@ -329,9 +329,7 @@ class NormalizedData(object):
           value: state index
       self.features: list of names of gene
     """
-    self._is_display_errors = is_display_errors
-    self.provider = DataProvider(
-        is_display_errors=self._is_display_errors)
+    self.provider = DataProvider(**kwargs)
     self.provider.do()
     if is_averaged:
       self.df_X = self.provider.df_normalized.T
@@ -369,9 +367,6 @@ class NormalizedData(object):
     # Create converter from state name to numeric index
     self.state_dct = {k: v for v, k in enumerate(states)}
     self.ser_y = ser_y.apply( lambda k: self.state_dct[k])
-    if not isinstance(self.ser_y, pd.Series):
-      import pdb; pdb.set_trace()
-      pass
 
   def _getDropIndices(self, indices,
       drop_index=cn.TIME_0):
@@ -388,8 +383,7 @@ class NormalizedData(object):
 
 class TrinaryData(NormalizedData):
 
-  def __init__(self, is_dropT1=True,
-      is_display_errors=True, **kwargs):
+  def __init__(self, is_dropT1=True, **kwargs):
     """
     self.df_X
         columns: gene index
@@ -400,8 +394,7 @@ class TrinaryData(NormalizedData):
         values: state index
     self.features: list of names of gene groups
     """
-    super().__init__(is_display_errors=is_display_errors,
-        **kwargs)
+    super().__init__(**kwargs)
     self.df_X = transform_data.aggregateGenes(
         df=self.df_X)
     drop_indices = self._getDropIndices(self.df_X.index)
