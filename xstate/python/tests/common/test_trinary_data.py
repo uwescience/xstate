@@ -11,8 +11,8 @@ import pandas as pd
 import unittest
 
 
-IGNORE_TEST = False
-IS_PLOT = False
+IGNORE_TEST = True
+IS_PLOT = True
 NUM_REPL = 3
 DIR = os.path.dirname(os.path.abspath(__file__))
 TEST_SAMPLE_PATH = os.path.join(DIR, "sample.csv")
@@ -134,8 +134,7 @@ class TestTrinaryData(unittest.TestCase):
       self.assertTrue(newDF.equals(lastDF))
 
   def testGetSampleData(self):
-    if IGNORE_TEST:
-      return
+    # TESTING
     def getDFS(sample):
       return [sample.AW, sample.AM_MDM, sample.galagan,
           sample.sherman, sample.GSE167232]
@@ -144,6 +143,7 @@ class TestTrinaryData(unittest.TestCase):
       sample = trinary_data.getSampleData(**kwargs)
       for df in getDFS(sample):
         self.assertTrue(helpers.isValidDataFrame(df, df.columns))
+        self.assertTrue(np.abs(df.mean().mean()) < np.inf) 
       return sample
     #
     def test_greater(sample_large, sample_small):

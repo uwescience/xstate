@@ -141,6 +141,25 @@ def trinaryReadsDF(csv_file=None, df_sample=None,
         is_convert_log2=is_convert_log2)
   return df
 
+def convertToLog2(obj):
+  """
+  Converts to log2 units.
+
+  Parameters
+  ----------
+  obj: DataFrame / Series
+  
+  Returns
+  -------
+  DataFrame
+  """
+  if isinstance(obj, pd.DataFrame):
+    return obj.applymap(lambda v: np.log2(v)
+        if v > cn.MIN_VALUE else np.log2(cn.MIN_VALUE))
+  else:  # Series
+    return obj.apply(lambda v: np.log2(v)
+        if v > cn.MIN_VALUE else np.log2(cn.MIN_VALUE))
+
 def calcTrinaryComparison(df, ser_ref=None,
     threshold=1, is_convert_log2=True):
   """
@@ -156,12 +175,10 @@ def calcTrinaryComparison(df, ser_ref=None,
      1: df is greater than 2**threshol*ser_ref
      0: otherwise
   """
-  MINVAL = 1e-12
   if is_convert_log2:
     if ser_ref is not None:
-      ser_ref_log = ser_ref.apply(lambda v: np.log2(v))
-    df_log = df.applymap(lambda v: np.log2(v)
-        if v > MINVAL else np.log2(MINVAL))
+      ser_ref_log = convertToLog2(ser_ref)
+    df_log = convertToLog2(df)
   else:
     ser_ref_log = ser_ref
     df_log = df

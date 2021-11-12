@@ -67,3 +67,6 @@ NUM_TIMES = 26
 STATE_NORMOXIA = "Normoxia"
 STATE_RESCUSCITATION = "Resuscitation"
 GENE_SEPARATOR = "--"
+
+# Data transformations
+MIN_VALUE = 10e-3  # Minimum value for an average count

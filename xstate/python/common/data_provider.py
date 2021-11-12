@@ -77,7 +77,6 @@ FILENAME_TRN_SIGNED = "MTB-Signed-TRN"
 NUM_REPL = 3
 T0 = 0
 MIN_LOG2_VALUE = -10
-MIN_VALUE = 10e-5
 MILLION = 1e6
 KILOBASE = 1e3  # Thousand bases
 SEPARATOR = "."  # Separator used in time columns to indicate replication
@@ -320,9 +319,10 @@ class DataProvider(object):
         rows: genes
         values: log2 of counts
     """
-    df_denormalized = df.applymap(lambda v: 2**v)
-    ser = df_denormalized.mean(axis=1)
-    ser = ser.apply(lambda v: np.log2(v))
+    #df_denormalized = df.applymap(lambda v: 2**v)
+    #ser = df_denormalized.mean(axis=1)
+    #ser = ser.apply(lambda v: np.log2(v))
+    ser = df.mean(axis=1)
     return ser
 
   def _getLog2NormalizedReadcounts(self):

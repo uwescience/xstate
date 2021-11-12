@@ -104,7 +104,7 @@ def getSampleData(is_regulator=True,
   COL_TIME = "time"
   COL_REP = "rep"
   COL_CONDITION = "condition"
-  def makeSamples(csv_file, calcRef, is_time_columns, df_data=None,
+  def makeSamplesWithPooledReference(csv_file, calcRef, is_time_columns, df_data=None,
       is_convert_log2=True):
     """
     Constructs samples with respect to reference instances within the same
@@ -119,6 +119,8 @@ def getSampleData(is_regulator=True,
         returns: Series
     is_time_columns: bool
         has a "time" column
+    is_convert_log2: bool
+        in count units and so needs to be converted to log2
     df_data: dataframe
         count to be converted into TrinaryData
     Returns
@@ -130,9 +132,12 @@ def getSampleData(is_regulator=True,
           csv_file=csv_file).T
     df_normalized = PROVIDER.normalizeReadsDF(
         df_data.T, is_time_columns=False).T
-    ser_ref = calcRef(df_normalized)
-    df_sample_trinary = transform_data.calcTrinaryComparison(df_normalized.T,
-        ser_ref=ser_ref, is_convert_log2=is_convert_log2).T
+    df_normalized = df_normalized.applymap(lambda v: max(v, cn.MIN_VALUE))
+    df_normalized_log = transform_data.convertToLog2(df_normalized)
+    ser_ref = calcRef(df_normalized_log)
+    df_sample_trinary = transform_data.calcTrinaryComparison(
+        df_normalized_log.T,
+        ser_ref=ser_ref, is_convert_log2=False).T
     return df_sample_trinary
   #
   def calcRefFromIndices(df, sel_ref_func):
@@ -140,7 +145,7 @@ def getSampleData(is_regulator=True,
     df_ref = df.loc[ref_idxs, :]
     return df_ref.mean()
   #
-  def calcRefPool(df):
+  def calcRefPooled(df):
     return df.mean(axis=0)
   #
   # AM/MDM
@@ -153,9 +158,9 @@ def getSampleData(is_regulator=True,
     ref_sel_func = lambda i: ("AM" in i) and (not "1" in i)
     def calcRef(df):
       return calcRefFromIndices(df, ref_sel_func)
-    df_AM_MDM = makeSamples(FILE_AM_MDM, calcRef, False)
+    df_AM_MDM = makeSamplesWithPooledReference(FILE_AM_MDM, calcRef, False)
   else:
-    df_AM_MDM = makeSamples(FILE_AM_MDM, calcRefPool, False)
+    df_AM_MDM = makeSamplesWithPooledReference(FILE_AM_MDM, calcRefPooled, False)
   # AW
   if (ref_type == REF_TYPE_BIOREACTOR):
     df_AW = transform_data.trinaryReadsDF(
@@ -166,9 +171,9 @@ def getSampleData(is_regulator=True,
     ref_sel_func = lambda i: ("neg" in i) and (not "1" in i)
     def calcRef(df):
       return calcRefFromIndices(df, ref_sel_func)
-    df_AW = makeSamples(FILE_AW, calcRef, False)
+    df_AW = makeSamplesWithPooledReference(FILE_AW, calcRef, False)
   else: # Pooled
-    df_AW = makeSamples(FILE_AW, calcRefPool, False)
+    df_AW = makeSamplesWithPooledReference(FILE_AW, calcRefPooled, False)
   df_AW = df_AW.sort_index()
   # Galagn data
   if (ref_type == REF_TYPE_BIOREACTOR):
@@ -180,12 +185,12 @@ def getSampleData(is_regulator=True,
     ref_sel_func = lambda i: ("d1." in i) and ("rep1" not in i)
     def calcRef(df):
       return calcRefFromIndices(df, ref_sel_func)
-    df_galagan = makeSamples(None, calcRef, False, df_data=df_data,
+    df_galagan = makeSamplesWithPooledReference(None, calcRef, False, df_data=df_data,
         is_convert_log2=False)
   else:  # Pooled
     df_data = _getGalaganData(
         is_display_errors=is_display_errors, is_trinary=False)
-    df_galagan = makeSamples(None, calcRefPool, False, df_data=df_data,
+    df_galagan = makeSamplesWithPooledReference(None, calcRefPooled, False, df_data=df_data,
         is_convert_log2=False)
   #
   df_sherman = _getTrinaryFromGeneLists()
@@ -201,9 +206,9 @@ def getSampleData(is_regulator=True,
     ref_sel_func = lambda i: ("_4hr_" in i) and ("rep6" not in i)
     def calcRef(df):
       return calcRefFromIndices(df, ref_sel_func)
-    df_rustad = makeSamples(FILE_RUSTAD, calcRef, False, is_convert_log2=False)
+    df_rustad = makeSamplesWithPooledReference(FILE_RUSTAD, calcRef, False, is_convert_log2=False)
   else: # pooled
-    df_rustad = makeSamples(FILE_RUSTAD, calcRefPool, False,
+    df_rustad = makeSamplesWithPooledReference(FILE_RUSTAD, calcRefPooled, False,
         is_convert_log2=False)
   # Construct the major sor index for rustad
   time_vals = ["4hr", "8hr", "12hr", "1day", "4day", "7day"]
@@ -228,7 +233,8 @@ def getSampleData(is_regulator=True,
         is_normalized=True,
         is_time_columns=False).T
   else: # pooled
-    df_GSE167232 = makeSamples(FILE_GSE167232, calcRefPool, False)
+    df_GSE167232 = makeSamplesWithPooledReference(FILE_GSE167232,
+        calcRefPooled, False)
   # Restrict to regulators?
   if is_regulator:
     for df in [df_AM_MDM, df_AW, df_sherman, df_galagan,
