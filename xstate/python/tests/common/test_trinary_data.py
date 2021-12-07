@@ -134,7 +134,8 @@ class TestTrinaryData(unittest.TestCase):
       self.assertTrue(newDF.equals(lastDF))
 
   def testGetSampleData(self):
-    # TESTING
+    if IGNORE_TEST:
+      return
     def getDFS(sample):
       return [sample.AW, sample.AM_MDM, sample.galagan,
           sample.sherman, sample.GSE167232]
@@ -205,6 +206,16 @@ class TestTrinaryData(unittest.TestCase):
       path = os.path.join(DIR, "%s.csv" % source)
       self.assertTrue(os.path.isfile(path))
     removeFiles()
+
+  def testSubsetToStages(self):
+    # TESTING
+    trinary = TrinaryData()
+    GENES = ["Rv1927", "Rv3083"]
+    subset_trinary = trinary.subsetToStages(["Transition"], genes=GENES)
+    len1 = len(trinary.ser_y[trinary.ser_y > 0])
+    len2 = len(subset_trinary.ser_y[subset_trinary.ser_y > 0])
+    self.assertGreater(len1, len2)
+    self.assertEqual(len(GENES), len(subset_trinary.df_X.columns))
     
 
 if __name__ == '__main__':

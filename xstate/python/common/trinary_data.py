@@ -16,6 +16,7 @@ import common.transform_data as transform_data
 from common_python.classifier import util_classifier
 
 import collections
+import copy
 import matplotlib.pyplot as plt
 import numpy as np
 import os
@@ -446,3 +447,32 @@ class TrinaryData(NormalizedData):
     _ = plt.colorbar(heatmap)
     if is_plot:
       plt.show()
+
+  def subsetToStages(self, stages, genes=None):
+    """
+    Transforms the trinary data as follows:
+       df_X - subsets the genes
+       ser_y - creates binary classes that selects a subset of stages
+    
+    Parameters
+    ----------
+    stages: list-str
+    genes: list-str
+    
+    Returns
+    -------
+    TrinaryData
+    """
+    if genes is None:
+      genes = list(self.df_X.columns)
+    data = copy.deepcopy(self)
+    data.df_X = pd.DataFrame(data.df_X[genes])
+    if stages is not None:
+      ser_y = data.ser_y.copy()
+      numeric_stages = []
+      value_dct = {i: 1 if (s in stages) else 0 for  i, s
+          in enumerate(cn.STAGE_DCT.values())}
+      new_values = [value_dct[v] for v in data.ser_y]
+      data.ser_y = pd.Series(new_values)
+      data.ser_y.index = ser_y.index
+    return data 
