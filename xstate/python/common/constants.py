@@ -70,7 +70,3 @@ GENE_SEPARATOR = "--"
 
 # Data transformations
 MIN_VALUE = 10e-3  # Minimum value for an average count
-
-# Stages
-STAGE_DCT = {0: "Transition",  1: "Stage1a", 2: "Stage1b",
-    3: "StageII", 4: "Resusciation"}

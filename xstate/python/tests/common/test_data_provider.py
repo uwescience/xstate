@@ -263,14 +263,16 @@ class TestDataProvider(unittest.TestCase):
     if IGNORE_TEST:
       return
     self.provider.do()
-    timepoints = ["T1", "T25"]
-    results = self.provider.getStages(timepoints)
-    self.assertEqual(results[0], "Normoxia")
-    self.assertEqual(results[1], "Resuscitation")
+    def test(timepoints):
+      results = self.provider.getStages(timepoints)
+      self.assertEqual(results[0], "Normoxia")
+      if len(results) > 1:
+        self.assertEqual(results[1], "Resuscitation")
     #
-    timepoints = "T1"
-    result = self.provider.getStages(timepoints)
-    self.assertEqual(result, "Normoxia")
+    test(["T1", "T25"])
+    test(["T1"])
+    test([1, 25])
+    test([1])
 
   def testGetStageNames(self):
     if IGNORE_TEST:

@@ -457,6 +457,7 @@ class TrinaryData(NormalizedData):
     Parameters
     ----------
     stages: list-str
+        str: timepoint
     genes: list-str
     
     Returns
@@ -465,6 +466,7 @@ class TrinaryData(NormalizedData):
     """
     if genes is None:
       genes = list(self.df_X.columns)
+    
     data = copy.deepcopy(self)
     data.df_X = pd.DataFrame(data.df_X[genes])
     if stages is not None:

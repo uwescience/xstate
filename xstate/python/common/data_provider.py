@@ -566,20 +566,34 @@ class DataProvider(object):
 
   def getStages(self, timepoints):
     """
-    Returns the names of stages for the timepoints.
+    Returns the names of stages for the timepoints or integer time offsets.
 
     Parameters
     ----------
-    timepoints: str/list-str
+    timepoints: str/list-str/int/list-int
     
     Returns
     -------
     str/np.array-str
     """
+    def convertIntToTimepoint(val):
+      return "T%d" % val
+    #
     if isinstance(timepoints, str):
-      result = self.df_stage_matrix["name"].loc[[timepoints]].values[0]
+      # str
+      new_timepoints = [timepoints]
+    elif isinstance(timepoints, int):
+      # int
+      new_timepoints = [convertIntToTimepoint(timepoints)]
+    elif isinstance(timepoints[0], str):
+      # list-str
+      new_timepoints = timepoints
+    elif isinstance(timepoints[0], int):
+      new_timepoints = [convertIntToTimepoint(t) for t in timepoints]
     else:
-      result = self.df_stage_matrix["name"].loc[timepoints].values
+      raise RuntimeError("Invalid type")
+    #
+    result = self.df_stage_matrix["name"].loc[new_timepoints].values
     return result
 
   def do(self, data_dir=cn.DATA_DIR):
