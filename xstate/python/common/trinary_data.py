@@ -3,9 +3,12 @@
 """
 df_X - feature matrix values with numeric column names.
        T0 is deleted
-ser_y - state values
+ser_y - state values. States are numbered to be consistent with the
+        order in cn.STATE_NAMES
 features - names of genes
 state_dct - dictionary mapping string names to numbers
+
+Note that the terms "stage" and "state" are used interchangably.
 """
 
 import common.constants as cn
@@ -21,6 +24,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 import pandas as pd
+import seaborn as sns
 
 T1_INDEX = "T1"
 MIN_NUM_NORMOXIA = 2  # Minimum number of normoxia states
@@ -362,11 +366,8 @@ class NormalizedData(object):
            suffix=idx)
         sers.append(new_ser_y)
       ser_y = pd.concat(sers)
+    states = list(cn.STATE_NAMES)
     ser_y = ser_y.drop(self._getDropIndices(ser_y.index))
-    # Equate Normoxia and Resuscitation if there are too
-    # few states
-    states = ["Normoxia", "Transition", "Stage1a", "Stage1b", "StageII",
-        "Resuscitation"]
     if len(ser_y[ser_y == cn.STATE_NORMOXIA])  \
         <= MIN_NUM_NORMOXIA:
       ser_y[ser_y == cn.STATE_NORMOXIA] = cn.STATE_RESCUSCITATION
@@ -415,7 +416,6 @@ class TrinaryData(NormalizedData):
         key=lambda v: float(v[1:]))
     self.ser_y = self.ser_y[sorted_index]
     self.features = self.df_X.columns.tolist()
-    #self.df_X.columns = range(len(self.features))
     self.df_fstat = None
 
   def plotFeatureSignificanceByState(self,
@@ -448,15 +448,15 @@ class TrinaryData(NormalizedData):
     if is_plot:
       plt.show()
 
-  def subsetToStages(self, stages, genes=None):
+  def subsetToStates(self, states, genes=None):
     """
     Transforms the trinary data as follows:
        df_X - subsets the genes
-       ser_y - creates binary classes that selects a subset of stages
+       ser_y - creates binary classes that selects a subset of states
     
     Parameters
     ----------
-    stages: list-str
+    states: list-str
         str: timepoint
     genes: list-str
     
@@ -466,15 +466,75 @@ class TrinaryData(NormalizedData):
     """
     if genes is None:
       genes = list(self.df_X.columns)
-    
+    #
     data = copy.deepcopy(self)
     data.df_X = pd.DataFrame(data.df_X[genes])
-    if stages is not None:
+    if states is not None:
       ser_y = data.ser_y.copy()
-      numeric_stages = []
-      value_dct = {i: 1 if (s in stages) else 0 for  i, s
-          in enumerate(cn.STAGE_DCT.values())}
+      numeric_states = []
+      value_dct = {i: 1 if (s in states) else 0 for  i, s
+          in enumerate(self.state_dct.keys())}
       new_values = [value_dct[v] for v in data.ser_y]
       data.ser_y = pd.Series(new_values)
       data.ser_y.index = ser_y.index
     return data 
+
+  def getStateNames(self, state_ints):
+    """
+    Provides the name of the state for the value of a state.
+    
+    Parameters
+    ----------
+    states: list-int
+
+    Return
+    list-str
+    """
+    rev_dct = {v: k for k, v in self.state_dct.items()}
+    return [rev_dct[i] for i in state_ints]
+
+  def plotExpressionLevels(self, features, df_X=None, is_plot=True, title=""):
+    """
+    Heat map of expression levels for features. Shades states.
+    
+    Parameters
+    ----------
+    features: list-str
+    df_X: DataFrame (feature vector)
+        if non-None, then this feature vector is used instead of self.df_X
+    """
+    if df_X is None:
+      df_X = self.df_X
+      ser_y = self.ser_y
+    else:
+      ser_y = None
+    # Internal constants
+    ROTATION = 30
+    FONTSIZE = 14
+    # Shade replications
+    fig, ax = plt.subplots(1, figsize=(20, 5))
+    columns = list(set(features).intersection(df_X.columns))
+    columns.sort()
+    new_df_X = df_X[columns]
+    sns.heatmap(new_df_X.T, cmap="seismic", ax=ax, vmin=-1, vmax=1)
+    # Shade the classes
+    if ser_y is not None:
+      alphas = [0.0, 0.4]
+      alpha_idx = 0
+      indices = list(ser_y.index)
+      for idx, val in enumerate(ser_y.values):
+        timepoint = indices[idx]
+        stage = PROVIDER.getStateNameForTimepoint(timepoint)
+        if (idx == 0):
+          ax.text(idx, 0, "%s" % stage, fontsize=FONTSIZE, rotation=ROTATION)
+        elif ser_y.values[idx-1] != val:
+          ax.text(idx, 0, "%s" % stage, fontsize=FONTSIZE, rotation=ROTATION)
+          alpha_idx = 1 - alpha_idx
+        ax.axvspan(idx, idx+1, facecolor='grey', alpha=alphas[alpha_idx])
+    # Other plot characteristics
+    ax.set_title(title, fontsize=18)
+    #
+    if is_plot:
+      plt.show()
+    else:
+      plt.close()

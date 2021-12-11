@@ -115,12 +115,14 @@ class DataProvider(object):
     "_dfs_adjusted_read_count_wrtT0_log2",
     "_dfs_centered_adjusted_read_count",
     "tfs",
+    "is_reinitialize",  # Don't use the existing pcl file
     ]
 
   def __init__(self, data_dir=cn.DATA_DIR,
       is_normalized_wrtT0=True,
       is_only_qgenes=True,
       is_display_errors=True,
+      is_reinitialize=False,
       calcRef=calcRefDefault):
     """
     :param bool is_normalized_wrtT0: normalize data w.r.t. T0
@@ -144,6 +146,7 @@ class DataProvider(object):
     self._is_only_qgenes = is_only_qgenes
     self._is_display_errors = is_display_errors
     self._setValues()
+    self.is_reinitialize = is_reinitialize
 
   def _setValues(self, provider=None):
     """
@@ -542,7 +545,22 @@ class DataProvider(object):
           [center(df) for df in self.dfs_adjusted_read_count]
     return self._dfs_centered_adjusted_read_count
 
-  def getStageNames(self, ser_y):
+  def getStateNameForTimepoint(self, timepoint):
+    """
+    Finds the name of the stage for the time point.
+
+    Parameters
+    ----------
+    timepoint: str
+    
+    Returns
+    -------
+    str
+    """
+    return self.df_stage_matrix.loc[timepoint, "name"]
+  
+
+  def getStateNames(self, ser_y):
     """
     Provides the list of stage names that correspond to the state indexes.
 
@@ -561,10 +579,10 @@ class DataProvider(object):
         new_timepoint = timepoint[0:-2]
       else:
         new_timepoint = timepoint
-      names[value] = self.getStages(new_timepoint)
-    return names
+      names[value] = self.getStates(new_timepoint)
+    return [n[0] for n in names]
 
-  def getStages(self, timepoints):
+  def getStates(self, timepoints):
     """
     Returns the names of stages for the timepoints or integer time offsets.
 
@@ -600,18 +618,20 @@ class DataProvider(object):
     """
     Assigns values to the instance data.
     """
+    # Determine if can initialize from existing data
     persister = Persister(cn.DATA_PROVIDER_PERSISTER_PATH)
-    done = False
+    is_initialized = False
     if persister.isExist():
-      try:
-        provider = persister.get()
-        if "calcRef" in dir(provider):
-          if str(self.calcRef) == str(provider.calcRef):
+      if not self.is_reinitialize:
+          provider = persister.get()
+          # See if there's a change in the calculation of reference values
+          if self.calcRef == provider.calcRef:
+            is_initialized = True
             self._setValues(provider=provider)
-            done = True
-      except AttributeError:
-        pass
-    if not done:
+            if not "is_reinitialize" in dir(self):
+              self.is_reinitialize = False
+    if not is_initialized:
+      # Do the initializtions
       # Gene categorizations
       self.df_ec_terms =  \
           self._makeDFFromCSV(FILENAME_EC_TERMS,

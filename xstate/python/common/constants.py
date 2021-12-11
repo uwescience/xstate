@@ -67,6 +67,9 @@ NUM_TIMES = 26
 STATE_NORMOXIA = "Normoxia"
 STATE_RESCUSCITATION = "Resuscitation"
 GENE_SEPARATOR = "--"
+# Order in which states appear
+STATE_NAMES = ["Normoxia", "Transition",  "Stage1a", "Stage1b",
+    "StageII", "Resuscitation"]
 
 # Data transformations
 MIN_VALUE = 10e-3  # Minimum value for an average count

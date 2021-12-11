@@ -1,5 +1,6 @@
 import common.constants as cn
 from common import trinary_data
+from common import data_provider
 from common.data_provider import DataProvider
 from common.trinary_data import TrinaryData, NormalizedData
 from common import trinary_data
@@ -11,12 +12,13 @@ import pandas as pd
 import unittest
 
 
-IGNORE_TEST = True
-IS_PLOT = True
+IGNORE_TEST = False
+IS_PLOT = False
 NUM_REPL = 3
 DIR = os.path.dirname(os.path.abspath(__file__))
 TEST_SAMPLE_PATH = os.path.join(DIR, "sample.csv")
-PROVIDER = DataProvider()
+GENES = ["Rv1927", "Rv3083"]
+PROVIDER = DataProvider(is_reinitialize=True)
 PROVIDER.do()
 
 
@@ -73,9 +75,17 @@ class TestTrinaryData(unittest.TestCase):
   def testTrinaryRefPooled(self):
     if IGNORE_TEST:
       return
-    trinary1 = TrinaryData()
-    trinary2 = TrinaryData(calcRef=PROVIDER.calcRefPooled)
-    self.assertFalse(trinary1.df_X.equals(trinary2.df_X))
+    trinary1 = TrinaryData(is_reinitialize=True)
+    trinary2 = TrinaryData(calcRef=PROVIDER.calcRefPooled, is_reinitialize=True)
+    is_different = False
+    for column in trinary1.df_X.columns:
+      if column not in trinary2.df_X.columns:
+        is_different = True
+        break
+      if not trinary1.df_X[column].equals(trinary2.df_X[column]):
+        is_different = True
+        break
+    self.assertTrue(is_different)
 
   def testNonAveraged(self):
     if IGNORE_TEST:
@@ -207,15 +217,30 @@ class TestTrinaryData(unittest.TestCase):
       self.assertTrue(os.path.isfile(path))
     removeFiles()
 
-  def testSubsetToStages(self):
-    # TESTING
+  def testSubsetToStates(self):
+    if IGNORE_TEST:
+      return
     trinary = TrinaryData()
-    GENES = ["Rv1927", "Rv3083"]
-    subset_trinary = trinary.subsetToStages(["Transition"], genes=GENES)
+    subset_trinary = trinary.subsetToStates(["Transition"], genes=GENES)
     len1 = len(trinary.ser_y[trinary.ser_y > 0])
     len2 = len(subset_trinary.ser_y[subset_trinary.ser_y > 0])
     self.assertGreater(len1, len2)
     self.assertEqual(len(GENES), len(subset_trinary.df_X.columns))
+
+  def testGetStateNames(self):
+    if IGNORE_TEST:
+      return
+    trinary = TrinaryData()
+    names = trinary.getStateNames([0, 4])
+    self.assertEqual(names[0], "Transition")
+    self.assertEqual(names[1], "Resuscitation")
+
+  def testPlotExpressionLevels(self):
+    if IGNORE_TEST:
+      return
+    trinary = TrinaryData()
+    trinary.plotExpressionLevels(GENES, is_plot=IS_PLOT)
+    trinary.plotExpressionLevels(GENES, df_X=trinary.df_X, is_plot=IS_PLOT)
     
 
 if __name__ == '__main__':

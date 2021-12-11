@@ -259,12 +259,12 @@ class TestDataProvider(unittest.TestCase):
     self.assertEqual(len(df), len(df_normalized))
     #ser_length = provider.df_gene_description[cn.LENGTH]
 
-  def testGetStages(self):
+  def testGetStates(self):
     if IGNORE_TEST:
       return
     self.provider.do()
     def test(timepoints):
-      results = self.provider.getStages(timepoints)
+      results = self.provider.getStates(timepoints)
       self.assertEqual(results[0], "Normoxia")
       if len(results) > 1:
         self.assertEqual(results[1], "Resuscitation")
@@ -274,19 +274,19 @@ class TestDataProvider(unittest.TestCase):
     test([1, 25])
     test([1])
 
-  def testGetStageNames(self):
+  def testGetStateNames(self):
     if IGNORE_TEST:
       return
     self.provider.do()
     trinary = TrinaryData()
-    result1s = self.provider.getStageNames(trinary.ser_y)
+    result1s = self.provider.getStateNames(trinary.ser_y)
     count = len(set(trinary.ser_y.values))
     self.assertEqual(len(result1s), count)
     #
     ser_y = trinary.ser_y.copy()
     indices = [i + ".0" for i in ser_y.index]
     ser_y.index = indices
-    result2s = self.provider.getStageNames(trinary.ser_y)
+    result2s = self.provider.getStateNames(trinary.ser_y)
     self.assertTrue(all([v1 == v2 for v1, v2 in zip (result1s, result2s)]))
 
   def testCalcRefPooled(self):
@@ -312,6 +312,15 @@ class TestDataProvider(unittest.TestCase):
     self.assertEqual(len(diff), 0)
     self.assertEqual(len(df1), len(df2))
     self.assertFalse(df1.equals(df2))
+
+  def testGetStateNameForTimepoint(self):
+    if IGNORE_TEST:
+      return
+    self.provider.do()
+    name = self.provider.getStateNameForTimepoint("T0")
+    self.assertEqual(name, "Normoxia")
+    name = self.provider.getStateNameForTimepoint("T24")
+    self.assertEqual(name, "Resuscitation")
  
 
 
