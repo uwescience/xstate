@@ -1,5 +1,3 @@
-"""Initializes for using SBMLLint."""
-
 import os
 import sys
 
