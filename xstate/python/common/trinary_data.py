@@ -532,7 +532,7 @@ class TrinaryData(NormalizedData):
           alpha_idx = 1 - alpha_idx
         ax.axvspan(idx, idx+1, facecolor='grey', alpha=alphas[alpha_idx])
     # Other plot characteristics
-    ax.set_title(title, fontsize=18)
+    ax.set_title(title, fontsize=18, pad=18, loc="right")
     #
     if is_plot:
       plt.show()

@@ -239,7 +239,7 @@ class TestTrinaryData(unittest.TestCase):
     if IGNORE_TEST:
       return
     trinary = TrinaryData()
-    trinary.plotExpressionLevels(GENES, is_plot=IS_PLOT)
+    trinary.plotExpressionLevels(GENES, is_plot=IS_PLOT, title="title")
     trinary.plotExpressionLevels(GENES, df_X=trinary.df_X, is_plot=IS_PLOT)
     
 
