@@ -150,9 +150,11 @@ class ClassificationData():
     STAGE_NAMES = np.array(STAGE_NAMES)
     # Bioreactor data calculated with two different references
     DATA_DCT = {
-        T0: TrinaryData(is_regulator=False, is_dropT1=True, is_averaged=True),
+        T0: TrinaryData(is_regulator=False, is_dropT1=True,
+                        is_averaged=True),
         POOLED: TrinaryData(is_regulator=False, is_dropT1=True,
-                            is_averaged=True, calcRef=PROVIDER.calcRefPooled)
+                            is_averaged=True, 
+                            calcRef=PROVIDER.calcRefPooled)
     }
     self._addName("DATA_DCT", DATA_DCT)
     SER_Y_DCT = {k: t.ser_y for k,t in DATA_DCT.items()}

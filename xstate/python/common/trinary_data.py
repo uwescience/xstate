@@ -109,8 +109,8 @@ def getSampleData(is_regulator=True,
   COL_TIME = "time"
   COL_REP = "rep"
   COL_CONDITION = "condition"
-  def makeSamplesWithPooledReference(csv_file, calcRef, is_time_columns, df_data=None,
-      is_convert_log2=True):
+  def makeSamplesWithPooledReference(csv_file, calcRef, is_time_columns,
+      df_data=None):
     """
     Constructs samples with respect to reference instances within the same
     data set.
@@ -124,8 +124,6 @@ def getSampleData(is_regulator=True,
         returns: Series
     is_time_columns: bool
         has a "time" column
-    is_convert_log2: bool
-        in count units and so needs to be converted to log2
     df_data: dataframe
         count to be converted into TrinaryData
     Returns
@@ -138,11 +136,13 @@ def getSampleData(is_regulator=True,
     df_normalized = PROVIDER.normalizeReadsDF(
         df_data.T, is_time_columns=False).T
     df_normalized = df_normalized.applymap(lambda v: max(v, cn.MIN_VALUE))
+    ser_ref = calcRef(df_normalized)
+    ser_ref = ser_ref.map(lambda v: max(v, cn.MIN_VALUE))  # No 0's
+    ser_ref_log = transform_data.convertToLog2(ser_ref)
     df_normalized_log = transform_data.convertToLog2(df_normalized)
-    ser_ref = calcRef(df_normalized_log)
     df_sample_trinary = transform_data.calcTrinaryComparison(
         df_normalized_log.T,
-        ser_ref=ser_ref, is_convert_log2=False).T
+        ser_ref=ser_ref_log, is_convert_log2=False).T
     return df_sample_trinary
   #
   def calcRefFromIndices(df, sel_ref_func):
@@ -190,13 +190,11 @@ def getSampleData(is_regulator=True,
     ref_sel_func = lambda i: ("d1." in i) and ("rep1" not in i)
     def calcRef(df):
       return calcRefFromIndices(df, ref_sel_func)
-    df_galagan = makeSamplesWithPooledReference(None, calcRef, False, df_data=df_data,
-        is_convert_log2=False)
+    df_galagan = makeSamplesWithPooledReference(None, calcRef, False, df_data=df_data)
   else:  # Pooled
     df_data = _getGalaganData(
         is_display_errors=is_display_errors, is_trinary=False)
-    df_galagan = makeSamplesWithPooledReference(None, calcRefPooled, False, df_data=df_data,
-        is_convert_log2=False)
+    df_galagan = makeSamplesWithPooledReference(None, calcRefPooled, False, df_data=df_data)
   #
   df_sherman = _getTrinaryFromGeneLists()
   df_sherman = df_sherman.transpose()
@@ -211,10 +209,9 @@ def getSampleData(is_regulator=True,
     ref_sel_func = lambda i: ("_4hr_" in i) and ("rep6" not in i)
     def calcRef(df):
       return calcRefFromIndices(df, ref_sel_func)
-    df_rustad = makeSamplesWithPooledReference(FILE_RUSTAD, calcRef, False, is_convert_log2=False)
+    df_rustad = makeSamplesWithPooledReference(FILE_RUSTAD, calcRef, False)
   else: # pooled
-    df_rustad = makeSamplesWithPooledReference(FILE_RUSTAD, calcRefPooled, False,
-        is_convert_log2=False)
+    df_rustad = makeSamplesWithPooledReference(FILE_RUSTAD, calcRefPooled, False)
   # Construct the major sor index for rustad
   time_vals = ["4hr", "8hr", "12hr", "1day", "4day", "7day"]
   reps  = [i.split("_")[-1] for i in df_rustad.index]
