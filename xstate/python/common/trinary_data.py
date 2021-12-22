@@ -125,7 +125,7 @@ def getSampleData(is_regulator=True,
     is_time_columns: bool
         has a "time" column
     df_data: dataframe
-        count to be converted into TrinaryData
+        count (not log2) to be converted into TrinaryData
     Returns
     -------
     DataFrame: Trinary values of samples
