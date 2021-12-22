@@ -52,8 +52,11 @@ latter is called the time replicated format.
 """
 
 import common.constants as cn
+from common import util
 import common_python.constants as cpn
 from common_python.util.persister import Persister
+
+
 
 import copy
 import os
@@ -359,7 +362,9 @@ class DataProvider(object):
     df = self._getLog2NormalizedReadcounts()
     # Normalize w.r.t. the counts
     drops = []  # Rows to drop
-    ser_ref = self.calcRef(df)
+    df_unlog2 = util.unconvertFromLog2(df)
+    ser_ref_unlog2 = self.calcRef(df_unlog2)
+    ser_ref = util.convertToLog2(ser_ref_unlog2)
     for idx in df.index:
       values = df.loc[idx, :] - ser_ref.loc[idx]
       df.loc[idx, :] = [max(MIN_LOG2_VALUE,  v) for v in values]

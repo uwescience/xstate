@@ -3,6 +3,7 @@
 from common import constants as cn
 from common.data_provider import DataProvider
 from common import data_provider
+from common import util
 
 import copy
 import os
@@ -141,42 +142,6 @@ def trinaryReadsDF(csv_file=None, df_sample=None,
         is_convert_log2=is_convert_log2)
   return df
 
-def convertToLog2(obj):
-  """
-  Converts to log2 units.
-
-  Parameters
-  ----------
-  obj: DataFrame / Series
-  
-  Returns
-  -------
-  DataFrame
-  """
-  if isinstance(obj, pd.DataFrame):
-    return obj.applymap(lambda v: np.log2(v)
-        if v > cn.MIN_VALUE else np.log2(cn.MIN_VALUE))
-  else:  # Series
-    return obj.apply(lambda v: np.log2(v)
-        if v > cn.MIN_VALUE else np.log2(cn.MIN_VALUE))
-
-def unconvertFromLog2(obj):
-  """
-  Converts from log2 units.
-
-  Parameters
-  ----------
-  obj: DataFrame / Series
-  
-  Returns
-  -------
-  DataFrame
-  """
-  if isinstance(obj, pd.DataFrame):
-    return obj.applymap(lambda v: 2**v)
-  else:  # Series
-    return obj.apply(lambda v: 2**v)
-
 def calcTrinaryComparison(df, ser_ref=None,
     threshold=1, is_convert_log2=True):
   """
@@ -194,8 +159,8 @@ def calcTrinaryComparison(df, ser_ref=None,
   """
   if is_convert_log2:
     if ser_ref is not None:
-      ser_ref_log = convertToLog2(ser_ref)
-    df_log = convertToLog2(df)
+      ser_ref_log = util.convertToLog2(ser_ref)
+    df_log = util.convertToLog2(df)
   else:
     ser_ref_log = ser_ref
     df_log = df
