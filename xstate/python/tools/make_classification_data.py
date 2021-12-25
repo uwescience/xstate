@@ -43,6 +43,15 @@ import seaborn as sns
 # Constants
 DATA_FILE = "make_classification_data.pcl"
 NUM_CLASSIFIER_IN_ENSEMBLE = 100
+NUM_FEATURES = list(range(1, 13))  # Number of features in classifier plots
+# Dataframe columns
+COL_REF = "ref"
+COL_GENE_GROUP = "Gene_GROUP"
+COL_NUM_FEATURE = "num_feature"
+COL_MEAN_ACCURACY = "mean_accuracy"
+COL_STD_ACCURACY = "std_accuracy"
+DF_ACCURACY_COLUMNS = [COL_REF, COL_GENE_GROUP, COL_NUM_FEATURE,
+    COL_MEAN_ACCURACY, COL_STD_ACCURACY]
 
 
 
@@ -168,10 +177,10 @@ class ClassificationData():
         for r in [REF_TYPE_BIOREACTOR, REF_TYPE_SELF, REF_TYPE_POOLED]}
     self._addName("SAMPLE_DCT", SAMPLE_DCT)
     # Classifiers
-    max_rank = len(MYCOBACTIN_BACTERIOFERRIN_GENES)
+    num_feature = len(MYCOBACTIN_BACTERIOFERRIN_GENES)
     CLASSIFIER_BASE = classifier_ensemble.ClassifierEnsemble(
           classifier_ensemble.ClassifierDescriptorSVM(),
-          filter_high_rank=max_rank, size=NUM_CLASSIFIER_IN_ENSEMBLE)
+          filter_high_rank=num_feature, size=NUM_CLASSIFIER_IN_ENSEMBLE)
     self._addName("CLASSIFIER_BASE", CLASSIFIER_BASE)
     CLASSIFIER_DCT = {}
     self._addName("CLASSIFIER_DCT", CLASSIFIER_DCT)
@@ -190,6 +199,9 @@ class ClassificationData():
     self._addName("CLASSIFIER", CLASSIFIER_DCT[('T0', 'mycobactin')])
     key = (T0, "mycobactin_bacterioferritin")
     self._addName("GENES", CLASSIFIER_DCT[key].features)
+    # Accuracy calculations for classifiers
+    DF_ACCURACY = self.calcAccuracy()
+    self._addName("DF_ACCURACY", DF_ACCURACY)
 
   def _addName(self, name, value):
     """
@@ -242,6 +254,54 @@ class ClassificationData():
     """
     self.deserialize()
     self.setNamespace(globals_dct)
+
+  def calcAccuracy(self, num_features=NUM_FEATURES, num_clf=100, is_debug=False):
+    """
+    Calculates the accuracy of classifiers using 10 iterations of 
+    cross validation with one holdout per state (stage).
+
+    Parameters
+    ----------
+    num_features: list-int
+    num_clf: number of classifiers in the ensemble
+    is_debug: bool
+        Creates dummy data 
+    
+    Returns
+    -------
+    DataFrame:
+        COL_REF: how reference is calculated for gene expressions
+        COL_GENE_GROUP: grouping of genes used in classifier
+        COL_NUM_FEATURE: number of features in classifiers
+        COL_MEAN_ACCURACY: mean accuracy of the classifiers
+        COL_STD_ACCURACY: standard deviation of accuracy
+    """
+    classifier_dct = self.namespace_dct["CLASSIFIER_DCT"]
+    data_dct = self.namespace_dct["DATA_DCT"]
+    gene_dct = self.namespace_dct["GENE_DCT"]
+    line_dct = {r: l for r, l in zip(data_dct.keys(), ["-", "--"])}
+    accuracy_dct = {c: [] for c in DF_ACCURACY_COLUMNS}
+    for (ref, group), clf in classifier_dct.items():
+      num_features = list(range(1, 13)) 
+      num_features.insert(0, 1)
+      trinary = copy.deepcopy(data_dct[ref])
+      trinary.df_X = dataframe.subset(trinary.df_X, gene_dct[group])
+      for num_feature in num_features:
+        if is_debug:
+          # Create a dummy value
+          mean_accuracy = np.random.rand()
+        else:
+          mean_accuracy = clf.crossValidate(
+              trinary, num_iter=10, num_holdout=1,
+              filter_high_rank=num_feature, size=num_clf)
+        accuracy_dct[COL_REF].append(ref)
+        accuracy_dct[COL_GENE_GROUP].append(group)
+        accuracy_dct[COL_NUM_FEATURE].append(num_feature)
+        accuracy_dct[COL_MEAN_ACCURACY].append(mean_accuracy)
+        std_accuracy = np.sqrt(mean_accuracy*(1 - mean_accuracy)/num_clf)
+        accuracy_dct[COL_STD_ACCURACY].append(std_accuracy)
+    df_accuracy = pd.DataFrame(accuracy_dct)
+    return df_accuracy
 
       
 if __name__ == '__main__':

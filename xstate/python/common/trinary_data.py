@@ -12,6 +12,7 @@ Note that the terms "stage" and "state" are used interchangably.
 """
 
 import common.constants as cn
+from common import util
 from common.msg import writeMessage
 from common.data_provider import DataProvider
 from common import data_provider
@@ -138,8 +139,8 @@ def getSampleData(is_regulator=True,
     df_normalized = df_normalized.applymap(lambda v: max(v, cn.MIN_VALUE))
     ser_ref = calcRef(df_normalized)
     ser_ref = ser_ref.map(lambda v: max(v, cn.MIN_VALUE))  # No 0's
-    ser_ref_log = transform_data.convertToLog2(ser_ref)
-    df_normalized_log = transform_data.convertToLog2(df_normalized)
+    ser_ref_log = util.convertToLog2(ser_ref)
+    df_normalized_log = util.convertToLog2(df_normalized)
     df_sample_trinary = transform_data.calcTrinaryComparison(
         df_normalized_log.T,
         ser_ref=ser_ref_log, is_convert_log2=False).T

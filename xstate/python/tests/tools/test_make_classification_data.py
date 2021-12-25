@@ -94,6 +94,17 @@ class TestClassificationData(unittest.TestCase):
           df_X = classifier_clf._df_X.copy()
           df_X = df_X[newColumns]
           self.assertTrue(test_df.equals(df_X))
+ 
+  def testCalcAccuracy(self):
+    if IGNORE_TEST:
+      return
+    self.data.deserialize()
+    df = self.data.calcAccuracy(is_debug=True)
+    diff = set(df.columns).symmetric_difference(
+        make_classification_data.DF_ACCURACY_COLUMNS)
+    self.assertEqual(len(diff), 0)
+    self.assertGreater(len(df), 0)
+    
       
 
 if __name__ == '__main__':
