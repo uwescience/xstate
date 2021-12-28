@@ -17,10 +17,12 @@ Usage 2: Use an existing persister file
 
 
 from common import constants as cn
-from common.trinary_data import TrinaryData, REF_TYPE_BIOREACTOR, \
+from common import sample_data
+from common.sample_data import REF_TYPE_BIOREACTOR, \
     REF_TYPE_SELF, REF_TYPE_POOLED
+from common.trinary_data import TrinaryData
 from common.data_provider import DataProvider
-from common import trinary_data
+from common.sample_data import SampleData
 from common_python.plots import util_plots
 from common_python.classifier import classifier_ensemble
 from common_python.classifier import classifier_collection
@@ -75,9 +77,8 @@ def _updateSampleDct(sample_dct):
          key: sample name
          value: DataFrame
   """
-  for name, sample_data in sample_dct.items():
-    data_dct = {n: sample_data.__getattribute__(n)
-        for n in trinary_data.SAMPLES}
+  for name, data in sample_dct.items():
+    data_dct = {n: data.getDataFrame(n) for n in sample_data.SAMPLES}
     sample_dct[name] = data_dct
 
 
@@ -173,7 +174,7 @@ class ClassificationData():
     DF_X_DCT = {k: df[MYCOBACTIN_GENES] for k, df in DF_X_DCT.items()}
     self._addName("DF_X_DCT", DF_X_DCT)
     # Sample data
-    SAMPLE_DCT = {r: trinary_data.getSampleData(ref_type=r, is_regulator=False)
+    SAMPLE_DCT = {r: sample_data.getSampleData(ref_type=r, is_regulator=False)
         for r in [REF_TYPE_BIOREACTOR, REF_TYPE_SELF, REF_TYPE_POOLED]}
     self._addName("SAMPLE_DCT", SAMPLE_DCT)
     # Classifiers

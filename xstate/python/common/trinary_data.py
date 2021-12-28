@@ -50,7 +50,7 @@ REF_TYPE_POOLED = "ref_type_pooled"  # Pool the data to get a reference
 
 
 ################## FUNCTIONS ###############
-def _subsetToRegulators(df):
+def subsetToRegulators(df):
   regulators = PROVIDER.df_trn_unsigned[cn.TF]
   regulators = list(set(regulators))
   regulator_cols = list(set(df.columns).intersection(regulators))
@@ -58,7 +58,7 @@ def _subsetToRegulators(df):
     if not column in regulator_cols:
       del df[column]
 #
-def _getTrinaryFromGeneLists(
+def getTrinaryFromGeneLists(
     repressed_path=SHERMAN_REPRESSED_PATH,
     induced_path=SHERMAN_INDUCED_PATH):
   """
@@ -92,6 +92,25 @@ def _getTrinaryFromGeneLists(
   ser.loc[represseds] = -1
   ser.loc[induceds] = 1
   return pd.DataFrame(ser)
+
+def convertToTrinary(df, threshold_low=-1, threshold_high=1):
+  """
+  Converts the dataframe to trinary values using the indicated thresholds.
+
+  Parameters
+  ----------
+  threshold_low: float
+      threshold for low value; set to -1
+  threshold_high: float
+      threshold for high value; set to +1
+  
+  Returns
+  -------
+  pd.DataFrame
+  """
+  df_trinary = df.applymap(lambda v:
+    1 if v >= threshold_high else -1 if v <= threshold_low else 0)
+  return df_trinary
 
 def getSampleData(is_regulator=True,
     is_display_errors=False,
@@ -153,8 +172,9 @@ def getSampleData(is_regulator=True,
   #
   def calcRefPooled(df):
     return df.mean(axis=0)
-  #
+  ####
   # AM/MDM
+  ####
   if (ref_type == REF_TYPE_BIOREACTOR):
     df_AM_MDM = transform_data.trinaryReadsDF(
         is_display_errors=is_display_errors,
@@ -167,7 +187,9 @@ def getSampleData(is_regulator=True,
     df_AM_MDM = makeSamplesWithPooledReference(FILE_AM_MDM, calcRef, False)
   else:
     df_AM_MDM = makeSamplesWithPooledReference(FILE_AM_MDM, calcRefPooled, False)
+  ####
   # AW
+  ####
   if (ref_type == REF_TYPE_BIOREACTOR):
     df_AW = transform_data.trinaryReadsDF(
         csv_file=FILE_AW,
@@ -181,7 +203,9 @@ def getSampleData(is_regulator=True,
   else: # Pooled
     df_AW = makeSamplesWithPooledReference(FILE_AW, calcRefPooled, False)
   df_AW = df_AW.sort_index()
+  ####
   # Galagn data
+  ####
   if (ref_type == REF_TYPE_BIOREACTOR):
     df_galagan = _getGalaganData(
         is_display_errors=is_display_errors, is_trinary=True)
@@ -197,9 +221,11 @@ def getSampleData(is_regulator=True,
         is_display_errors=is_display_errors, is_trinary=False)
     df_galagan = makeSamplesWithPooledReference(None, calcRefPooled, False, df_data=df_data)
   #
-  df_sherman = _getTrinaryFromGeneLists()
+  df_sherman = getTrinaryFromGeneLists()
   df_sherman = df_sherman.transpose()
+  ####
   # Rustad
+  ####
   if (ref_type == REF_TYPE_BIOREACTOR):
     df_rustad = transform_data.trinaryReadsDF(
         csv_file=FILE_RUSTAD,
@@ -224,7 +250,9 @@ def getSampleData(is_regulator=True,
   df_rustad = df_rustad.sort_values([COL_CONDITION, COL_TIME, COL_REP])
   for col in [COL_REP, COL_TIME, COL_CONDITION]:
     del df_rustad[col]
+  ####
   # GSE167232
+  ####
   if (ref_type == REF_TYPE_BIOREACTOR) or (ref_type == REF_TYPE_SELF):
     if (ref_type == REF_TYPE_SELF):
       message = "\n**No self reference defined for GSE167232."
@@ -242,7 +270,7 @@ def getSampleData(is_regulator=True,
   if is_regulator:
     for df in [df_AM_MDM, df_AW, df_sherman, df_galagan,
         df_rustad, df_GSE167232]:
-      _subsetToRegulators(df)
+      subsetToRegulators(df)
   #
   sample_data = SampleData(
       AM_MDM=df_AM_MDM,
@@ -261,7 +289,7 @@ def _getGSE167232(is_regulator, is_display_errors):
       is_normalized=True,
       is_time_columns=False).T
   if is_regulator:
-    _subsetToRegulators(df)
+    subsetToRegulators(df)
   return df
 
 def _getGalaganData(is_trinary=True, is_display_errors=False):
@@ -350,7 +378,7 @@ class NormalizedData(object):
     drop_indices = self._getDropIndices(self.df_X.index)
     self.df_X = self.df_X.drop(drop_indices)
     if is_regulator:
-      _subsetToRegulators(self.df_X)
+      subsetToRegulators(self.df_X)
     self.features = self.df_X.columns.tolist()
     # Create class information
     ser_y = self.provider.df_stage_matrix[cn.STAGE_NAME]
