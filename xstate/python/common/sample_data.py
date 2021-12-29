@@ -93,6 +93,7 @@ class SampleData(object):
   def __init__(self, is_regulator=True,
       is_display_errors=False,
       ref_type=REF_TYPE_BIOREACTOR,
+      is_average=False,
     ):
     """
     Acquires data obtain from other soruces.
@@ -105,6 +106,8 @@ class SampleData(object):
         Report errors in constructing sample data
     ref_type: str
         What reference data are used to calculate gene expression
+    is_average: bool
+        Replicas are averaged
     """
     self.is_regulator = is_regulator
     self.is_display_errors = is_display_errors
@@ -156,6 +159,11 @@ class SampleData(object):
   def GSE167232(self):
     raise RuntimeError("Use `df_GSE167232`")
 
+  # TODO: Restructure so that:
+  #        1. Obtain normalized counts for each data sample
+  #           calculate averages if needed
+  #        2. Find the reference for gene expression
+  #        3. Calculate trinary values
   def initialize(self):
     """
     Construct the feature vectors for the samples.
@@ -265,6 +273,30 @@ class SampleData(object):
           self.df_rustad, self.df_GSE167232]:
         trinary_data.subsetToRegulators(df)
 
+  @staticmethod
+  def averageReplicas(df, replica_names):
+    """
+    Constructs a dataframe in which columns are averaged for indices that
+    contain the same replica name.
+
+    Parameters
+    ----------
+    df: pd.DataFrame
+    replica_names: list-str
+    
+    Returns
+    -------
+    pd.DataFrame
+    """
+    sers = []
+    for name in replica_names:
+      indices = [i for i in df.index if name in i]
+      sers.append(df.loc[indices, :].mean())
+    df_result = pd.concat(sers, axis=1)
+    df_result = df_result.T
+    df_result.index = replica_names
+    return df_result
+      
   @staticmethod
   def _makeSamplesWithPooledReference(csv_file, calcRef, is_time_columns,
       df_data=None):

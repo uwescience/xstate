@@ -8,8 +8,8 @@ import pandas as pd
 import unittest
 
 
-IGNORE_TEST = False
-IS_PLOT = False
+IGNORE_TEST = True
+IS_PLOT = True
 
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 PERSISTER_PATH = os.path.join(TEST_DIR, "test_sample_data_persister.pcl")
@@ -126,6 +126,34 @@ class TestSampleData(unittest.TestCase):
     for sample_name in sample_data.SAMPLES:
       path = os.path.join(TEST_DIR, "%s.csv" % sample_name)
       self.assertTrue(os.path.isfile(path))
+
+  def testAverageReplicas(self):
+    # TESTING
+    replica_names = ["d1", "d2", "d3", "d5", "d7", "d8"]
+    df = SAMPLE_DATA.df_galagan
+    df_result = sample_data.SampleData.averageReplicas(
+        SAMPLE_DATA.df_galagan, replica_names)
+    diff = set(df.columns).symmetric_difference(df_result.columns)
+    self.assertEqual(len(diff), 0)
+    diff = set(df_result.index).symmetric_difference(replica_names)
+    self.assertEqual(len(diff), 0)
+    #
+    COL_A = "a"
+    COL_B = "b"
+    SIZE = 3
+    df = pd.DataFrame({
+        COL_A: list(range(2*SIZE)),
+        COL_B: [10*v for v in range(2*SIZE)]
+    })
+    indices = ["c1_%d" % n for n in range(SIZE)]
+    other_indices = [i.replace("c1", "c2") for i in indices]
+    indices.extend(other_indices)
+    df.index = indices
+    replica_names = ["c1", "c2"]
+    df_result = sample_data.SampleData.averageReplicas(df, replica_names)
+    expected = (SIZE-1)*(SIZE-2)/2.0
+    self.assertEqual(df_result.loc[replica_names[0], COL_A], expected)
+    self.assertEqual(df_result.loc[replica_names[0], COL_B], 10*expected)
     
 
 if __name__ == '__main__':
