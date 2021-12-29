@@ -2,9 +2,11 @@ import common.constants as cn
 from common import trinary_data
 from common import data_provider
 from common.data_provider import DataProvider
+from common import sample_data
 from common.trinary_data import TrinaryData, NormalizedData
 from common import trinary_data
 from common_python.testing import helpers
+from common_python.util.persister import Persister
 
 import numpy as np
 import os
@@ -16,10 +18,17 @@ IGNORE_TEST = False
 IS_PLOT = False
 NUM_REPL = 3
 DIR = os.path.dirname(os.path.abspath(__file__))
-TEST_SAMPLE_PATH = os.path.join(DIR, "sample.csv")
+TEST_SAMPLE_PATH = os.path.join(DIR, "test_trinary_data_sample.csv")
+PERSISTER_PATH = os.path.join(DIR, "test_trinary_data_persister.pcl")
+PERSISTER = Persister(PERSISTER_PATH)
 GENES = ["Rv1927", "Rv3083"]
-PROVIDER = DataProvider(is_reinitialize=True)
-PROVIDER.do()
+if PERSISTER.isExist():
+  PROVIDER, SAMPLE_DATA = PERSISTER.get()
+else:
+  SAMPLE_DATA = sample_data.getSampleData()
+  PROVIDER = DataProvider(is_reinitialize=True)
+  PROVIDER.do()
+  PERSISTER.set((PROVIDER, SAMPLE_DATA))
 
 
 ################### FUNCTIONS ############
@@ -125,98 +134,6 @@ class TestTrinaryData(unittest.TestCase):
     self.assertGreater(len(trinary_full.df_X.columns),
         len(trinary_regulator.df_X.columns))
 
-  def testGetGalaganData(self):
-    if IGNORE_TEST:
-      return
-    df = trinary_data._getGalaganData(False)
-    trues = ["Rv" in c for c in df.columns]
-    self.assertTrue(helpers.isValidDataFrame(df,
-        df.columns))
-
-  def testGetGSE167232(self):
-    if IGNORE_TEST:
-      return
-    is_regulator = False
-    is_display_errors = True
-    lastDF = trinary_data._getGSE167232(is_regulator, is_display_errors)
-    for _ in range(5):
-      newDF = trinary_data._getGSE167232(is_regulator, is_display_errors)
-      self.assertTrue(newDF.equals(lastDF))
-
-  def testGetSampleData(self):
-    if IGNORE_TEST:
-      return
-    def getDFS(sample):
-      return [sample.AW, sample.AM_MDM, sample.galagan,
-          sample.sherman, sample.GSE167232]
-    #
-    def test_single(**kwargs):
-      sample = trinary_data.getSampleData(**kwargs)
-      for df in getDFS(sample):
-        self.assertTrue(helpers.isValidDataFrame(df, df.columns))
-        self.assertTrue(np.abs(df.mean().mean()) < np.inf) 
-      return sample
-    #
-    def test_greater(sample_large, sample_small):
-      dfs_large = getDFS(sample_large)
-      dfs_small = getDFS(sample_small)
-      for idx in range(len(dfs_large)):
-        self.assertGreater(
-            len(dfs_large[idx].columns),
-            len(dfs_small[idx].columns))
-    # Non-default reference
-    ref_types = [
-        trinary_data.REF_TYPE_BIOREACTOR,
-        trinary_data.REF_TYPE_SELF,
-        trinary_data.REF_TYPE_POOLED,
-        ]
-    for ref_type in ref_types:
-      sample_large = test_single(is_regulator=False, ref_type=ref_type)
-      sample_small = test_single(is_regulator=True, ref_type=ref_type)
-      test_greater(sample_large, sample_small)
-
-  def testGetTrinaryFromGeneLists(self):
-    if IGNORE_TEST:
-      return
-    df = trinary_data._getTrinaryFromGeneLists(
-        induced_path=None, repressed_path=None)
-    ser = df[df.columns.tolist()[0]]
-    self.assertEqual(ser.apply(lambda v: np.abs(v)).sum(),
-        0)
-    #
-    df = trinary_data._getTrinaryFromGeneLists()
-    ser = df[df.columns.tolist()[0]]
-    self.assertGreater(len(ser[ser == -1]), 0)
-    self.assertGreater(len(ser[ser == 1]), 0)
-
-  def testSerializeFeatureMatrix(self):
-    if IGNORE_TEST:
-      return
-    sample_data = trinary_data.getSampleData()
-    df_X = sample_data.galagan
-    self.assertFalse(os.path.isfile(TEST_SAMPLE_PATH))
-    trinary_data.serializeFeatureMatrix(df_X,
-        TEST_SAMPLE_PATH)
-    self.assertTrue(os.path.isfile(TEST_SAMPLE_PATH))
-
-  def testSerializeFeatureMatrix(self):
-    if IGNORE_TEST:
-      return
-    def removeFiles():
-      for source in trinary_data.SAMPLES:
-        path = os.path.join(DIR, "%s.csv" % source)
-        if os.path.isfile(path):
-          os.remove(path)
-    #
-    removeFiles()
-    sample_data = trinary_data.getSampleData()
-    trinary_data.mkFeatureMatrices(sample_data,
-        directory=DIR)
-    for source in trinary_data.SAMPLES:
-      path = os.path.join(DIR, "%s.csv" % source)
-      self.assertTrue(os.path.isfile(path))
-    removeFiles()
-
   def testSubsetToStates(self):
     if IGNORE_TEST:
       return
@@ -241,6 +158,15 @@ class TestTrinaryData(unittest.TestCase):
     trinary = TrinaryData()
     trinary.plotExpressionLevels(GENES, is_plot=IS_PLOT, title="title")
     trinary.plotExpressionLevels(GENES, df_X=trinary.df_X, is_plot=IS_PLOT)
+
+  def testSerializeFeatureMatrix(self):
+    if IGNORE_TEST:
+      return
+    df_X = SAMPLE_DATA.df_galagan
+    self.assertFalse(os.path.isfile(TEST_SAMPLE_PATH))
+    trinary_data.serializeFeatureMatrix(df_X,
+        TEST_SAMPLE_PATH)
+    self.assertTrue(os.path.isfile(TEST_SAMPLE_PATH))
     
 
 if __name__ == '__main__':

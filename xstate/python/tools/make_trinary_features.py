@@ -9,8 +9,8 @@ import os
 
 
 def run():
-  sample_data = trinary_data.getSampleData()
-  trinary_data.mkFeatureMatrices(sample_data)
+  data = trinary_data.getSampleData()
+  data.serialize()
 
 
 if __name__ == '__main__':

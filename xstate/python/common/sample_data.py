@@ -50,6 +50,41 @@ def getSampleData(**kwargs):
   data = SampleData(**kwargs)
   data.initialize()
   return data
+#
+def getTrinaryFromGeneLists(
+    repressed_path=SHERMAN_REPRESSED_PATH,
+    induced_path=SHERMAN_INDUCED_PATH):
+  """
+  Creates a feature vector from a list of induced
+  and repressed genes.
+
+  Parameters
+  ----------
+  repressed_path: str
+  induced_path: str
+
+  Return
+  ------
+  pd.DataFrame with single column
+      index: gene
+      value: trinary     
+  """
+  genes = PROVIDER.dfs_read_count[0].index.tolist()
+  #
+  def get_list(path):
+    if path is None:
+      return []
+    with open(path, "r") as fd:
+      items = [l.strip() for l in fd.readlines()]
+    return list(set(genes).intersection(items))
+    #
+  represseds = get_list(repressed_path)
+  induceds = get_list(induced_path)
+  ser = pd.Series(np.repeat(0, len(genes)))
+  ser.index = genes
+  ser.loc[represseds] = -1
+  ser.loc[induceds] = 1
+  return pd.DataFrame(ser)
 
 
 ################## CLASSES ###############
@@ -176,7 +211,7 @@ class SampleData(object):
     ####
     # Sherman
     ####
-    self.df_sherman = trinary_data.getTrinaryFromGeneLists()
+    self.df_sherman = getTrinaryFromGeneLists()
     self.df_sherman = self.df_sherman.transpose()
     ####
     # Rustad
@@ -311,3 +346,12 @@ class SampleData(object):
       dfs.append(df)
     df_merge = pd.concat(dfs, axis=1)
     return df_merge.T
+
+  def serialize(self, directory=cn.TRINARY_SAMPLES_DIR):
+    """
+    Creates data in trinary feature matrix.
+    :param SampleData sample_data:
+    """
+    for source in SAMPLES:
+      path = os.path.join(directory, "%s.csv" % source)
+      trinary_data.serializeFeatureMatrix(self.getDataFrame(source), path)
