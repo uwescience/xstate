@@ -16,9 +16,14 @@ PERSISTER_PATH = os.path.join(TEST_DIR, "test_sample_data_persister.pcl")
 PERSISTER = Persister(PERSISTER_PATH)
 if PERSISTER.isExist():
   SAMPLE_DATA = PERSISTER.get()
+  if SAMPLE_DATA is None:
+    print("***Proceeding without SAMPLE_DATA")
 else:
-  SAMPLE_DATA = sample_data.getSampleData()
-  SAMPLE_DATA.initialize()
+  try:
+    SAMPLE_DATA = sample_data.getSampleData()
+    SAMPLE_DATA.initialize()
+  except:
+    SAMPLE_DATA = None
   PERSISTER.set(SAMPLE_DATA)
 
 
@@ -48,13 +53,15 @@ class TestSampleData(unittest.TestCase):
       return
     self.assertIsNone(self.data.df_galagan)
 
+  # TODO: tests for each of the cases for data initialization
+  #         is_regulator, ref_type, is_average
   def testInitialize(self):
-    if IGNORE_TEST:
-      return
+    # TESTING
     self.data.initialize()
     for sample_name in sample_data.SAMPLES:
-      df = self.data.getDataFrame(sample_name)
+      df = self.data.getDataframe(sample_name)
       self.assertTrue(isinstance(df, pd.DataFrame))
+    import pdb; pdb.set_trace()
 
   def testGetGalaganData(self):
     if IGNORE_TEST:
@@ -105,20 +112,6 @@ class TestSampleData(unittest.TestCase):
       sample_small = test_single(is_regulator=True, ref_type=ref_type)
       test_greater(sample_large, sample_small)
 
-  def testGetTrinaryFromGeneLists(self):
-    if IGNORE_TEST:
-      return
-    df = sample_data.getTrinaryFromGeneLists(
-        induced_path=None, repressed_path=None)
-    ser = df[df.columns.tolist()[0]]
-    self.assertEqual(ser.apply(lambda v: np.abs(v)).sum(),
-        0)
-    #
-    df = sample_data.getTrinaryFromGeneLists()
-    ser = df[df.columns.tolist()[0]]
-    self.assertGreater(len(ser[ser == -1]), 0)
-    self.assertGreater(len(ser[ser == 1]), 0)
-
   def testSerialize(self):
     if IGNORE_TEST:
       return
@@ -128,7 +121,8 @@ class TestSampleData(unittest.TestCase):
       self.assertTrue(os.path.isfile(path))
 
   def testAverageReplicas(self):
-    # TESTING
+    if IGNORE_TEST:
+      return
     replica_names = ["d1", "d2", "d3", "d5", "d7", "d8"]
     df = SAMPLE_DATA.df_galagan
     df_result = sample_data.SampleData.averageReplicas(

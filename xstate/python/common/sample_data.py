@@ -6,33 +6,22 @@ feature vector is a dataframe
     column: gene
     value: trinary
 features - names of genes
+
+averaging is done in log2 units.
 """
 
 import common.constants as cn
 from common import trinary_data
 from common import util
-from common.msg import writeMessage
 from common.data_provider import DataProvider
-from common import data_provider
-import common.transform_data as transform_data
+from common import transform_data
 
 import collections
-import copy
-import numpy as np
 import os
 import pandas as pd
 
 T1_INDEX = "T1"
 MIN_NUM_NORMOXIA = 2  # Minimum number of normoxia states
-FILE_GALAGAN = "galagan_raw_hypoxia_ts.csv" 
-FILE_AM_MDM = "AM_MDM_Mtb_transcripts_DEseq.csv"
-FILE_AW = "AW_plus_v_AW_neg_Mtb_transcripts_DEseq.csv"
-FILE_RUSTAD = "rustad_hypoxia_dataset_GSE9331.csv"
-FILE_GSE167232 = "GSE167232_mtb_transcriptome_counts_normalized_filtered.csv"
-SHERMAN_INDUCED_PATH = os.path.join(cn.SAMPLES_DIR,
-    "sherman_induced_mtb.txt")
-SHERMAN_REPRESSED_PATH = os.path.join(cn.SAMPLES_DIR,
-    "sherman_repressed_mtb.txt")
 PROVIDER = DataProvider(is_display_errors=False)
 PROVIDER.do()
 # Reference types
@@ -42,7 +31,47 @@ REF_TYPE_POOLED = "ref_type_pooled"  # Pool the data to get a reference
 COL_TIME = "time"
 COL_REP = "rep"
 COL_CONDITION = "condition"
-SAMPLES = ["AM_MDM", "AW", "sherman", "galagan", "rustad", "GSE167232"]
+###
+# Define characteristics of the sample files
+###
+# File names
+FILE_GALAGAN = "galagan_raw_hypoxia_ts.csv"
+FILE_AM_MDM = "AM_MDM_Mtb_transcripts_DEseq.csv"
+FILE_AW = "AW_plus_v_AW_neg_Mtb_transcripts_DEseq.csv"
+FILE_RUSTAD = "rustad_hypoxia_dataset_GSE9331.csv"
+FILE_GSE167232 = "GSE167232_mtb_transcriptome_counts_normalized_filtered.csv"
+# Functions for selecting instances that are reference values for gene expression
+REFSEL_FUNC_AM_MDM = lambda i: ("AM" in i) and (not "1" in i)
+REFSEL_FUNC_AW = lambda i: ("neg" in i) and (not "1" in i)
+REFSEL_FUNC_GALAGAN = lambda i: ("d1." in i) and ("rep1" not in i)
+REFSEL_FUNC_GSE167232 = None
+REFSEL_FUNC_RUSTAD = lambda i: ("_4hr_" in i) and ("rep6" not in i)
+# Strings that identifies a grouping of replicas
+REPLICA_STRINGS_AM_MDM = ["AM", "MDM"]
+REPLICA_STRINGS_AW = ["AW_plus", "AW_neg"]
+REPLICA_STRINGS_GALAGAN = ["d1", "d2", "d3", "d5", "d7", "d8"]
+REPLICA_STRINGS_GSE167232 = ["TB_HIGH", "TB_LOW", "TB_AM", "TB_IM"]
+REPLICA_STRINGS_RUSTAD = ["H37Rv_hypoxia_%s" % s for s
+    in ["4hr", "8hr", "12hr", "1day", "4day", "7day"]]
+# Describes data in the file
+# csv: CSV file
+# log2: True if in log2 units
+# nrml: Normalized for gene length and library size
+# sel: Reference selection function used in REF_TYPE_SELF
+# rpl: Strings that identify replicas
+SampleEntry = collections.namedtuple("SampleEntry", "csv log2 nrml sel rpl")
+SAMPLE_ENTRY_DCT = {"AM_MDM": SampleEntry(csv=FILE_AM_MDM, log2=True, nrml=True,
+                        sel=REFSEL_FUNC_AM_MDM, rpl=REPLICA_STRINGS_AM_MDM),
+                   "AW": SampleEntry(csv=FILE_AW, log2=True, nrml=True,
+                        sel=REFSEL_FUNC_AW, rpl=REPLICA_STRINGS_AW),
+                   "galagan": SampleEntry(csv=FILE_GALAGAN, log2=True, nrml=True,
+                        sel=REFSEL_FUNC_GALAGAN, rpl=REPLICA_STRINGS_GALAGAN),
+                   "rustad": SampleEntry(csv=FILE_RUSTAD, log2=True, nrml=True,
+                        sel=REFSEL_FUNC_RUSTAD, rpl=REPLICA_STRINGS_RUSTAD),
+                   "GSE167232": SampleEntry(csv=FILE_GSE167232, log2=False, nrml=True,
+                        sel=REFSEL_FUNC_GSE167232, rpl=REPLICA_STRINGS_GSE167232),
+                   }
+SAMPLES = list(SAMPLE_ENTRY_DCT.keys())
 
 
 ################## FUNCTIONS ###############
@@ -50,41 +79,6 @@ def getSampleData(**kwargs):
   data = SampleData(**kwargs)
   data.initialize()
   return data
-#
-def getTrinaryFromGeneLists(
-    repressed_path=SHERMAN_REPRESSED_PATH,
-    induced_path=SHERMAN_INDUCED_PATH):
-  """
-  Creates a feature vector from a list of induced
-  and repressed genes.
-
-  Parameters
-  ----------
-  repressed_path: str
-  induced_path: str
-
-  Return
-  ------
-  pd.DataFrame with single column
-      index: gene
-      value: trinary     
-  """
-  genes = PROVIDER.dfs_read_count[0].index.tolist()
-  #
-  def get_list(path):
-    if path is None:
-      return []
-    with open(path, "r") as fd:
-      items = [l.strip() for l in fd.readlines()]
-    return list(set(genes).intersection(items))
-    #
-  represseds = get_list(repressed_path)
-  induceds = get_list(induced_path)
-  ser = pd.Series(np.repeat(0, len(genes)))
-  ser.index = genes
-  ser.loc[represseds] = -1
-  ser.loc[induceds] = 1
-  return pd.DataFrame(ser)
 
 
 ################## CLASSES ###############
@@ -97,7 +91,7 @@ class SampleData(object):
     ):
     """
     Acquires data obtain from other soruces.
-    
+
     Parameters
     ----------
     is_regulator: bool
@@ -112,27 +106,41 @@ class SampleData(object):
     self.is_regulator = is_regulator
     self.is_display_errors = is_display_errors
     self.ref_type = ref_type
+    self.is_average = is_average
     # Feature vectors for the samples
     self.df_AM_MDM = None
     self.df_AW = None
-    self.df_sherman = None
     self.df_galagan = None
     self.df_rustad = None
     self.df_GSE167232 = None
 
-  def getDataFrame(self, sample_name):
+  def getDataframeAttributeName(self, sample_name):
+    """
+    Provides the attribute name for the sample data frame.
+
+    Parameters
+    ----------
+    sample_name: str
+
+    Returns
+    -------
+    str
+    """
+    return "df_%s" % sample_name
+
+  def getDataframe(self, sample_name):
     """
     Provides the dataframe for the sample.
 
     Parameters
     ----------
     sample_name: str
-    
+
     Returns
     -------
     pd.DataFrame
     """
-    attribute_name = "df_%s" % sample_name
+    attribute_name = self.getDataframeAttributeName(sample_name)
     return self.__getattribute__(attribute_name)
 
   @property
@@ -145,7 +153,7 @@ class SampleData(object):
 
   @property
   def sherman(self):
-    raise RuntimeError("Use `df_sherman`")
+    raise RuntimeError("Unsupported data`")
 
   @property
   def galagan(self):
@@ -159,119 +167,62 @@ class SampleData(object):
   def GSE167232(self):
     raise RuntimeError("Use `df_GSE167232`")
 
-  # TODO: Restructure so that:
-  #        1. Obtain normalized counts for each data sample
-  #           calculate averages if needed
-  #        2. Find the reference for gene expression
-  #        3. Calculate trinary values
+  @staticmethod
+  def _calcRef(df, selFunc=None):
+    return SampleData._calcRefFromIndices(df, selFunc)
+
   def initialize(self):
     """
     Construct the feature vectors for the samples.
     """
-    ####
-    # AM/MDM
-    ####
-    if (self.ref_type == REF_TYPE_BIOREACTOR):
-      self.df_AM_MDM = transform_data.trinaryReadsDF(
-          is_display_errors=self.is_display_errors,
-          csv_file=FILE_AM_MDM,
-          is_time_columns=False).T
-    elif (self.ref_type == REF_TYPE_SELF):
-      ref_sel_func = lambda i: ("AM" in i) and (not "1" in i)
-      def calcRef(df):
-        return self._calcRefFromIndices(df, ref_sel_func)
-      self.df_AM_MDM = self._makeSamplesWithPooledReference(FILE_AM_MDM, calcRef, False)
-    else:
-      self.df_AM_MDM = self._makeSamplesWithPooledReference(FILE_AM_MDM, self.calcRefPooled, False)
-    ####
-    # AW
-    ####
-    if (self.ref_type == REF_TYPE_BIOREACTOR):
-      self.df_AW = transform_data.trinaryReadsDF(
-          csv_file=FILE_AW,
-          is_display_errors=self.is_display_errors,
-          is_time_columns=False).T
-    elif (self.ref_type == REF_TYPE_SELF):
-      ref_sel_func = lambda i: ("neg" in i) and (not "1" in i)
-      def calcRef(df):
-        return self._calcRefFromIndices(df, ref_sel_func)
-      self.df_AW = self._makeSamplesWithPooledReference(FILE_AW, calcRef, False)
-    else: # Pooled
-      self.df_AW = self._makeSamplesWithPooledReference(FILE_AW, self.calcRefPooled, False)
-    self.df_AW = self.df_AW.sort_index()
-    ####
-    # Galagn data
-    ####
-    if (self.ref_type == REF_TYPE_BIOREACTOR):
-      self.df_galagan = self._getGalaganData()
-      self.df_galagan = trinary_data.convertToTrinary(self.df_galagan)
-    elif (self.ref_type == REF_TYPE_SELF):
-      df_data = self._getGalaganData()
-      ref_sel_func = lambda i: ("d1." in i) and ("rep1" not in i)
-      def calcRef(df):
-        return self._calcRefFromIndices(df, ref_sel_func)
-      self.df_galagan = self._makeSamplesWithPooledReference(
-          None, calcRef, False, df_data=df_data)
-    else:  # Pooled
-      df_data = self._getGalaganData()
-      self.df_galagan = self._makeSamplesWithPooledReference(
-          None, self.calcRefPooled, False, df_data=df_data)
-    ####
-    # Sherman
-    ####
-    self.df_sherman = getTrinaryFromGeneLists()
-    self.df_sherman = self.df_sherman.transpose()
-    ####
-    # Rustad
-    ####
-    if (self.ref_type == REF_TYPE_BIOREACTOR):
-      self.df_rustad = transform_data.trinaryReadsDF(
-          csv_file=FILE_RUSTAD,
-          is_display_errors=self.is_display_errors,
-          is_convert_log2=False,
-          is_time_columns=False).T
-    elif (self.ref_type == REF_TYPE_SELF):
-      ref_sel_func = lambda i: ("_4hr_" in i) and ("rep6" not in i)
-      def calcRef(df):
-        return self._calcRefFromIndices(df, ref_sel_func)
-      self.df_rustad = self._makeSamplesWithPooledReference(FILE_RUSTAD, calcRef, False)
-    else: # pooled
-      self.df_rustad = self._makeSamplesWithPooledReference(FILE_RUSTAD, self.calcRefPooled, False)
-    # Construct the major sor index for rustad
-    time_vals = ["4hr", "8hr", "12hr", "1day", "4day", "7day"]
-    reps  = [i.split("_")[-1] for i in self.df_rustad.index]
-    times  = [i.split("_")[-2] for i in self.df_rustad.index]
-    conditions = ["_".join(i.split("_")[0:2]) for i in self.df_rustad.index]
-    self.df_rustad[COL_TIME] = [time_vals.index(v) for v in times]
-    self.df_rustad[COL_REP] = reps
-    self.df_rustad[COL_CONDITION] = conditions
-    self.df_rustad = self.df_rustad.sort_values([COL_CONDITION, COL_TIME, COL_REP])
-    for col in [COL_REP, COL_TIME, COL_CONDITION]:
-      del self.df_rustad[col]
-    ####
-    # GSE167232
-    ####
-    if (self.ref_type == REF_TYPE_BIOREACTOR)  \
-        or (self.ref_type == REF_TYPE_SELF):
-      if (self.ref_type == REF_TYPE_SELF):
-        message = "\n**No self reference defined for GSE167232."
-        message += " Using bioreactor data.\n"
-        writeMessage(message)
-      self.df_GSE167232 = transform_data.trinaryReadsDF(
-          csv_file=FILE_GSE167232,
-          is_display_errors=self.is_display_errors,
-          is_normalized=True,
-          is_time_columns=False).T
-    else: # pooled
-      self.df_GSE167232 = self._makeSamplesWithPooledReference(FILE_GSE167232,
-          self.calcRefPooled, False)
-    ###
-    # Restrict to regulators?
-    ###
-    if self.is_regulator:
-      for df in [self.df_AM_MDM, self.df_AW, self.df_sherman, self.df_galagan,
-          self.df_rustad, self.df_GSE167232]:
+    # Iterate across all samples
+    for sample_name, sample_entry in SAMPLE_ENTRY_DCT.items():
+      attribute_name = self.getDataframeAttributeName(sample_name)
+      ###
+      # Construct a data frame that is normalized for gene and library
+      # and has log2 units
+      ###
+      df = transform_data.readGeneCSV(sample_entry.csv)
+      if not sample_entry.nrml:
+        raise RuntimeError("Do gene normalization for sample %s" % sample_name)
+      if not sample_entry.log2:
+        df = util.convertToLog2(df)
+      ###
+      # Convert to trinary values. This takes into account the reference values
+      # for gene expression
+      ###
+      if self.ref_type == REF_TYPE_BIOREACTOR:
+        ser_ref = transform_data.makeBioreactorT0ReferenceData()
+      elif (self.ref_type == REF_TYPE_POOLED) \
+          or ((self.ref_type == REF_TYPE_SELF) and (sample_entry.rpl is None)):
+        ser_ref = df.mean(axis=0)
+      elif self.ref_type == REF_TYPE_SELF:
+        ser_ref = self._calcRefFromIndices(df, sample_entry.sel)
+      else:
+        raise RuntimeError("%s is an invalid reference type" % self.ref_type)
+      ###
+      # Average replicas if requested
+      ###
+      if self.is_average:
+        df = self.averageReplicas(df, sample_entry.rpl)
+        COL = "col"
+        df_ref = pd.DataFrame({COL: ser_ref})
+        df_ref = self.averageReplicas(df_ref, sample_entry.rpl)
+        ser_ref = df_ref[COL]
+        import pdb; pdb.set_trace()
+      ###
+      # Convert to trinary values
+      ###
+      df = transform_data.calcTrinaryComparison(df, ser_ref,
+          is_convert_log2=False)
+      df = df.T
+      ###
+      # Restrict to regulators?
+      ###
+      if self.is_regulator:
         trinary_data.subsetToRegulators(df)
+      #
+      self.__setattr__(attribute_name, df)
 
   @staticmethod
   def averageReplicas(df, replica_names):
@@ -283,7 +234,7 @@ class SampleData(object):
     ----------
     df: pd.DataFrame
     replica_names: list-str
-    
+
     Returns
     -------
     pd.DataFrame
@@ -296,53 +247,26 @@ class SampleData(object):
     df_result = df_result.T
     df_result.index = replica_names
     return df_result
-      
+
   @staticmethod
-  def _makeSamplesWithPooledReference(csv_file, calcRef, is_time_columns,
-      df_data=None):
+  def _calcRefFromIndices(df, selrefFunc):
     """
-    Constructs samples with respect to reference instances within the same
-    data set.
+    Calculates the reference values for genes by using a selected set of indices.
 
     Parameters
     ----------
-    csv_file: str
-        CSV file for the sample data if df_data == None
-    calcRef: Function
-        parameters: DataFrame
-        returns: Series
-    is_time_columns: bool
-        has a "time" column
-    df_data: dataframe
-        count (not log2) to be converted into TrinaryData
+    df: DataFrame
+    selrefFunc: Function
+        parameters: indice
+        returns: bool
+
     Returns
     -------
-    DataFrame: Trinary values of samples
+    Series
     """
-    if df_data is None:
-      df_data = transform_data.readGeneCSV(csv_dir=cn.SAMPLES_DIR,
-          csv_file=csv_file).T
-    df_normalized = PROVIDER.normalizeReadsDF(
-        df_data.T, is_time_columns=False).T
-    df_normalized = df_normalized.applymap(lambda v: max(v, cn.MIN_VALUE))
-    ser_ref = calcRef(df_normalized)
-    ser_ref = ser_ref.map(lambda v: max(v, cn.MIN_VALUE))  # No 0's
-    ser_ref_log = util.convertToLog2(ser_ref)
-    df_normalized_log = util.convertToLog2(df_normalized)
-    df_sample_trinary = transform_data.calcTrinaryComparison(
-        df_normalized_log.T,
-        ser_ref=ser_ref_log, is_convert_log2=False).T
-    return df_sample_trinary
-
-  @staticmethod
-  def _calcRefFromIndices(df, sel_ref_func):
-    ref_idxs = [i for i in df.index if sel_ref_func(i)]
+    ref_idxs = [i for i in df.index if selrefFunc(i)]
     df_ref = df.loc[ref_idxs, :]
     return df_ref.mean()
-
-  @staticmethod
-  def calcRefPooled(df):
-    return df.mean(axis=0)
 
   def _getGSE167232(self):
     df = transform_data.trinaryReadsDF(
@@ -353,31 +277,6 @@ class SampleData(object):
     if self.is_regulator:
       trinary_data.subsetToRegulators(df)
     return df
-  
-  def _getGalaganData(self):
-    """
-    Constructs trinary values for Galagan data.
-    These data are normalized and in log2 units.
-    The 10h data are Normoxia.
-    :return pd.DataFrame:
-        columns: genes
-        index: time instances
-        values: trinary based on log2
-    """
-    self.df_galagan = transform_data.readGeneCSV(
-        csv_file=FILE_GALAGAN)
-    dfs = []
-    for idx in range(1, 4):
-      stg = "rep%d" % idx
-      columns = [c for c in self.df_galagan.columns
-          if stg in c]
-      col_ref = columns[0]
-      columns.remove(col_ref)
-      df = self.df_galagan[columns].copy()
-      df = df.apply(lambda c: c - self.df_galagan[col_ref])
-      dfs.append(df)
-    df_merge = pd.concat(dfs, axis=1)
-    return df_merge.T
 
   def serialize(self, directory=cn.TRINARY_SAMPLES_DIR):
     """
@@ -386,4 +285,4 @@ class SampleData(object):
     """
     for source in SAMPLES:
       path = os.path.join(directory, "%s.csv" % source)
-      trinary_data.serializeFeatureMatrix(self.getDataFrame(source), path)
+      trinary_data.serializeFeatureMatrix(self.getDataframe(source), path)

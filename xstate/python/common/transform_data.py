@@ -10,6 +10,9 @@ import os
 import pandas as pd
 import numpy as np
 
+PROVIDER = DataProvider()
+PROVIDER.do()
+
 
 # TODO: Should nan values be a trinary 0?
 def makeTrinaryData(df=None, min_abs=1.0, is_include_nan=True):
@@ -89,7 +92,7 @@ def readGeneCSV(csv_file, csv_dir=cn.SAMPLES_DIR):
   return df
 
 def trinaryReadsDF(csv_file=None, df_sample=None,
-    csv_dir=cn.SAMPLES_DIR, is_display_errors=True,
+    csv_dir=cn.SAMPLES_DIR,
     ser_ref=None,
     is_normalized=False,
     is_time_columns=True, col_ref=None, is_convert_log2=True):
@@ -114,8 +117,6 @@ def trinaryReadsDF(csv_file=None, df_sample=None,
       indexes are instances, trinary values
   Exactly one of df_sample and csv_file must be non-null
   """
-  provider = DataProvider(is_display_errors=is_display_errors)
-  provider.do()
   # Get the sample data to transform 
   if df_sample is None:
     df_sample = readGeneCSV(csv_file, csv_dir=csv_dir)
@@ -123,27 +124,92 @@ def trinaryReadsDF(csv_file=None, df_sample=None,
   if is_normalized:
     df_normalized = df_sample
   else:
-    df_normalized = provider.normalizeReadsDF(df_sample,
+    df_normalized = PROVIDER.normalizeReadsDF(df_sample,
         is_time_columns=is_time_columns)
   # Construct the reference data
   if ser_ref is None:
     # Compute trinary values relative to original reads
     if col_ref is None:
-      dfs = copy.deepcopy(provider.dfs_adjusted_read_count)
+      dfs = copy.deepcopy(PROVIDER.dfs_adjusted_read_count)
       for df in dfs:
         df.columns = stripReplicaString(df.columns)
-      df_ref = sum(dfs) / len(provider.dfs_adjusted_read_count)
-      col_name = provider.getT0s(df_ref)[0]
+      df_ref = sum(dfs) / len(PROVIDER.dfs_adjusted_read_count)
+      col_name = PROVIDER.getT0s(df_ref)[0]
       ser_ref = df_ref[col_name]
     else:
       ser_ref = df_normalized[col_ref]
       del df_normalized[col_ref]
-    df = calcTrinaryComparison(df_normalized, ser_ref=ser_ref,
+    df = calcTrinaryComparison(df_normalized, ser_ref,
         is_convert_log2=is_convert_log2)
   return df
 
-def calcTrinaryComparison(df, ser_ref=None,
-    threshold=1, is_convert_log2=True):
+def makeBioreactorT0ReferenceData():
+  """
+  Creates the T0 reference data in log units.
+  :return Series:
+  """
+  dfs = copy.deepcopy(PROVIDER.dfs_adjusted_read_count)
+  for df in dfs:
+    df.columns = stripReplicaString(df.columns)
+  df_ref = sum(dfs) / len(PROVIDER.dfs_adjusted_read_count)
+  ser = df_ref[cn.TIME_0]
+  ser = util.convertToLog2(ser)
+  return ser
+
+# TODO: Remove?
+def makeTrinaryReadsWithBioReactorT0DF(csv_file=None, df_sample=None,
+    csv_dir=cn.SAMPLES_DIR,
+    ser_ref=None,
+    is_normalized=False,
+    is_time_columns=True, col_ref=None, is_convert_log2=True):
+  """
+  Creates trinary values for read counts w.r.t. data provider.
+  (a) adjusting for gene length, (b) library size,
+  (c) log2, (d) ratio w.r.t. T0. The T0 values is
+  the average of the values in default DataProvider.
+  Data may come from an existing dataframe or a CSV file.
+  :param str csv_file: File in "samples" directory.
+      columns are: "GENE_ID", instance ids
+  :param pd.DataFrame df_sample: columns are genes,
+      index are instances, values are raw readcounts
+  :param pd.Series ser_ref: Reference values for
+      calculating expression levels
+  :param bool is_time_columns: a time column is present
+  :param bool is_normalized: data are already normalized
+  :param str csv_dir: directory where csv file is found
+  :param str col_ref: column to use as reference in
+      normalization
+  :return pd.DataFrame: columns are genes, 
+      indexes are instances, trinary values
+  Exactly one of df_sample and csv_file must be non-null
+  """
+  # Get the sample data to transform 
+  if df_sample is None:
+    df_sample = readGeneCSV(csv_file, csv_dir=csv_dir)
+  # Normalize the samples
+  if is_normalized:
+    df_normalized = df_sample
+  else:
+    df_normalized = PROVIDER.normalizeReadsDF(df_sample,
+        is_time_columns=is_time_columns)
+  # Construct the reference data
+  if ser_ref is None:
+    # Compute trinary values relative to original reads
+    if col_ref is None:
+      dfs = copy.deepcopy(PROVIDER.dfs_adjusted_read_count)
+      for df in dfs:
+        df.columns = stripReplicaString(df.columns)
+      df_ref = sum(dfs) / len(PROVIDER.dfs_adjusted_read_count)
+      col_name = PROVIDER.getT0s(df_ref)[0]
+      ser_ref = df_ref[col_name]
+    else:
+      ser_ref = df_normalized[col_ref]
+      del df_normalized[col_ref]
+    df = calcTrinaryComparison(df_normalized, ser_ref,
+        is_convert_log2=is_convert_log2)
+  return df
+
+def calcTrinaryComparison(df, ser_ref, threshold=1, is_convert_log2=True):
   """
   Calculates trinary values of a DataFrame w.r.t. a reference in
   log2 units.
@@ -157,18 +223,17 @@ def calcTrinaryComparison(df, ser_ref=None,
      1: df is greater than 2**threshol*ser_ref
      0: otherwise
   """
+  if ser_ref is None:
+    raise RuntimeError("ser_ref cannot be None.")
   if is_convert_log2:
-    if ser_ref is not None:
-      ser_ref_log = util.convertToLog2(ser_ref)
+    ser_ref_log = util.convertToLog2(ser_ref)
     df_log = util.convertToLog2(df)
   else:
-    ser_ref_log = ser_ref
-    df_log = df
+    df_log = df.copy()
+    ser_ref_log = ser_ref.copy()
   #
   if ser_ref is None:
     ser_ref_log = pd.Series(np.repeat(0, len(df)), index=df.index)
-  #
-  df_comp = df_log.copy()
   # Find the common indices
   indices = set(df_log.index).intersection(ser_ref_log.index)
   df_log = df_log.loc[indices, :]
@@ -176,8 +241,8 @@ def calcTrinaryComparison(df, ser_ref=None,
   df_comp_T = df_log.T - ser_ref_log
   # Drop the nan columns, those genes for which there is no reference
   df_comp = (df_comp_T.dropna(axis=1, how='all')).T
-  df_result = df_comp.applymap(
-      lambda v: 0 if np.abs(v) < threshold else -1 if v < 0 else 1)
+  df_result = makeTrinaryData(df=df_comp, min_abs=threshold,
+      is_include_nan=False)
   return df_result
 
 def removeGenesWithExcessiveReplicationVariance(df_X, max_var=None):

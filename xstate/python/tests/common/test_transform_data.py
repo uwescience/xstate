@@ -1,5 +1,6 @@
 from common import transform_data
 import common.constants as cn
+from common import util
 from common.trinary_data import TrinaryData
 from common.data_provider import DataProvider
 from common_python.testing import helpers
@@ -61,7 +62,6 @@ class TestFunctions(unittest.TestCase):
     # Smoke tests for csv
     df_result = transform_data.trinaryReadsDF(
         csv_file="AM_MDM_Mtb_transcripts_DEseq.csv",
-        is_display_errors=False,
         is_time_columns=False)
 
   # TODO: Fix so working with the same transformation of features,
@@ -100,13 +100,10 @@ class TestFunctions(unittest.TestCase):
       return
     df_in = pd.DataFrame({'a': [4, 0.20, 1]})
     df_expected = pd.DataFrame({'a': [1, -1, 0]})
-    df_out = transform_data.calcTrinaryComparison(df_in)
+    ser_ref = pd.Series(np.repeat(1, len(df_in)))
+    df_out = transform_data.calcTrinaryComparison(df_in, ser_ref,
+        is_convert_log2=True)
     self.assertTrue(df_out.equals(df_expected))
-    #
-    df_out = transform_data.calcTrinaryComparison(df_in,
-        ser_ref=df_in['a'])
-    trues = [v == 0 for v in df_out['a']]
-    self.assertTrue(all(trues))
 
   def testStripReplicaString(self):
     if IGNORE_TEST:
@@ -130,32 +127,19 @@ class TestFunctions(unittest.TestCase):
           trinary.df_X, max_var=max_var)
       self.assertGreaterEqual(len(df_base.columns), len(df.columns))
 
-  def testConvertUnconvertToFromLog2(self):
-    if IGNORE_TEST:
-      return
-    def test(pd_obj):
-      if isinstance(pd_obj, pd.DataFrame):
-        base_obj = DF
-      else:
-        base_obj = SER
-      obj1 = transform_data.convertToLog2(base_obj)
-      obj2 = transform_data.unconvertFromLog2(obj1)
-      if isinstance(pd_obj, pd.DataFrame):
-        ser2 = obj2["a"]
-      else:
-        ser2 = obj2
-      ser2.loc[0] = 0
-      trues = [np.isclose(v1, v2) for v1, v2 in zip(ser2, SER)]
-      self.assertTrue(all(trues))
-    #
-    test(SER)
-    test(DF)
-
-    ser = transform_data.convertToLog2(SER)
-    ser1 = transform_data.unconvertFromLog2(ser)
+    ser = util.convertToLog2(SER)
+    ser1 = util.unconvertFromLog2(ser)
     ser1.loc[0] = 0
     trues = [np.isclose(v1, v2) for v1, v2 in zip(ser1, SER)]
     self.assertTrue(all(trues))
+
+  def testMakeBioreactorT0ReferenceData(self):
+    if IGNORE_TEST:
+      return
+    ser = transform_data.makeBioreactorT0ReferenceData()
+    self.assertTrue(isinstance(ser, pd.Series))
+    self.assertGreater(ser.min(), 0)
+    self.assertGreater(len(ser), 10)
     
     
 
