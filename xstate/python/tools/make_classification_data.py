@@ -78,7 +78,7 @@ def _updateSampleDct(sample_dct):
          value: DataFrame
   """
   for name, data in sample_dct.items():
-    data_dct = {n: data.getDataFrame(n) for n in sample_data.SAMPLES}
+    data_dct = {n: data.getDataframe(n) for n in sample_data.SAMPLES}
     sample_dct[name] = data_dct
 
 

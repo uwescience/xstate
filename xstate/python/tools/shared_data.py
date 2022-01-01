@@ -18,6 +18,7 @@ DIR = os.path.dirname(os.path.abspath(__file__))
 PERSISTER_PATH = os.path.join(DIR,
     "persister_shared_data.pcl")
 PERSISTER = Persister(PERSISTER_PATH)
+DIRECTORY = "feature_analyzer_averaged"
 
 
 class SharedData(object):
@@ -36,11 +37,8 @@ class SharedData(object):
       self.df_X = self.trinary.df_X
       self.ser_y = self.trinary.ser_y
       self.states = self.ser_y.unique()
-      data_dir = os.path.join(cn.DATA_DIR,
-           "feature_analyzer")
+      data_dir = os.path.join(cn.DATA_DIR, DIRECTORY)
       data_path_pat = os.path.join(data_dir, "%d") 
-      data_dir = os.path.join(cn.DATA_DIR,
-           "feature_analyzer")
       analyzer_dct = fa.deserialize({s: data_path_pat % s for s in self.states})
       analyzers = analyzer_dct.values()
       self.collection_dct = {s: 

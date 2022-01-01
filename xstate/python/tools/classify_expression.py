@@ -17,7 +17,7 @@ OUTPUT_PATH = "classify_output.csv"
 
 def processExpressionData(data_file, data_dir=cn.SAMPLES_DIR,
     parameter_file=cn.ENSEMBLE_PATH,
-    output_path=OUTPUT_PATH, is_display_errors=True):
+    output_path=OUTPUT_PATH):
   """
   Performs classification on expression data.
   Expression data is structured as a comma separated variable (CSV)
@@ -32,15 +32,15 @@ def processExpressionData(data_file, data_dir=cn.SAMPLES_DIR,
       file_path=parameter_file, is_force=False)
   trinary = trinary_data.TrinaryData(
       is_display_errors=is_display_errors)
-  inv_dict = {v: k for k, v in trinary.state_dict.items()}
+  inv_dct = {v: k for k, v in trinary.state_dct.items()}
   path = os.path.join(data_dir, data_file)
   df_trinary = transform_data.trinaryReadsDF(
       csv_file=path,
       is_time_columns=False,
       is_display_errors=is_display_errors)
   df_classes = svm_ensemble.predict(df_trinary.T)
-  columns = [inv_dict[v] for v in df_classes.columns]
-  df_classes.columns = [inv_dict[v] for v in df_classes.columns]
+  columns = [inv_dct[v] for v in df_classes.columns]
+  df_classes.columns = [inv_dct[v] for v in df_classes.columns]
   df_classes.to_csv(output_path)
 
 
