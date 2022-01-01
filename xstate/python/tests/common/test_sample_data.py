@@ -14,6 +14,7 @@ IS_PLOT = False
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 PERSISTER_PATH = os.path.join(TEST_DIR, "test_sample_data_persister.pcl")
 PERSISTER = Persister(PERSISTER_PATH)
+got_sample = False
 if PERSISTER.isExist():
   SAMPLE_DATA = PERSISTER.get()
   if SAMPLE_DATA is None:
@@ -169,6 +170,27 @@ class TestSampleData(unittest.TestCase):
     expected = (SIZE-1)*(SIZE-2)/2.0
     self.assertEqual(df_result.loc[replica_names[0], COL_A], expected)
     self.assertEqual(df_result.loc[replica_names[0], COL_B], 10*expected)
+
+  def testGetItem(self):
+    if IGNORE_TEST:
+      return
+    df_AW = SAMPLE_DATA["AW"]
+    self.assertTrue(isinstance(df_AW, pd.DataFrame))
+
+  def testKeys(self):
+    if IGNORE_TEST:
+      return
+    samples = SAMPLE_DATA.keys()
+    diff = set(samples).symmetric_difference(sample_data.SAMPLES)
+    self.assertEqual(len(diff), 0)
+
+  def testValues(self):
+    if IGNORE_TEST:
+      return
+    dfs = SAMPLE_DATA.values()
+    self.assertEqual(len(dfs), len(sample_data.SAMPLES))
+    for df in dfs:
+      self.assertTrue(isinstance(df, pd.DataFrame))
     
 
 if __name__ == '__main__':

@@ -172,6 +172,27 @@ class SampleData(object):
   def _calcRef(df, selFunc=None):
     return SampleData._calcRefFromIndices(df, selFunc)
 
+  def keys(self):
+    return SAMPLES
+
+  def values(self):
+    return [self[s] for s in SAMPLES]
+
+  def __getitem__(self, sample_name):
+    """
+    Provides the DataFrame for a sample using the syntax
+        data[<sample_name>]
+
+    Parameters
+    ----------
+    sample_name: str
+    
+    Returns
+    DataFrame
+    -------
+    """
+    return self.getDataframe(sample_name)
+
   def initialize(self):
     """
     Construct the feature vectors for the samples.

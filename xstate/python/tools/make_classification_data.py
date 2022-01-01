@@ -56,32 +56,6 @@ DF_ACCURACY_COLUMNS = [COL_REF, COL_GENE_GROUP, COL_NUM_FEATURE,
     COL_MEAN_ACCURACY, COL_STD_ACCURACY]
 
 
-
-# Internal functions
-def _updateSampleDct(sample_dct):
-  """
-  Transforms the elements of the sample dictionary
-  into dictionaries.
-
-  Parameters
-  ----------
-  sample_dct: dict
-     key: ref_type (str) [.e.g, T0, POOLED]
-     value: SampleData
-  
-  Returns
-  -------
-  dict:
-     key: ref_type (str)
-     value: dict
-         key: sample name
-         value: DataFrame
-  """
-  for name, data in sample_dct.items():
-    data_dct = {n: data.getDataframe(n) for n in sample_data.SAMPLES}
-    sample_dct[name] = data_dct
-
-
 class ClassificationData():
   # Data preparation constants
 
@@ -177,6 +151,10 @@ class ClassificationData():
     SAMPLE_DCT = {r: sample_data.getSampleData(ref_type=r, is_regulator=False)
         for r in [REF_TYPE_BIOREACTOR, REF_TYPE_SELF, REF_TYPE_POOLED]}
     self._addName("SAMPLE_DCT", SAMPLE_DCT)
+    SAMPLE_AVG_DCT = {r: sample_data.getSampleData(ref_type=r,
+        is_regulator=False, is_average=True)
+        for r in [REF_TYPE_BIOREACTOR, REF_TYPE_SELF, REF_TYPE_POOLED]}
+    self._addName("SAMPLE_AVG_DCT", SAMPLE_AVG_DCT)
     # Classifiers
     num_feature = len(MYCOBACTIN_BACTERIOFERRIN_GENES)
     CLASSIFIER_BASE = classifier_ensemble.ClassifierEnsemble(
@@ -192,7 +170,6 @@ class ClassificationData():
         df_X = dataframe.subset(trinary.df_X, gene_list, axis=1)
         classifier.fit(df_X, trinary.ser_y, class_names=STAGE_NAMES)
         CLASSIFIER_DCT[(trinary_key, gene_key)] = classifier
-    _updateSampleDct(SAMPLE_DCT)
     # Construct derivative structures    
     self._addName("DF_X", DF_X_DCT[T0])
     self._addName("SER_Y", SER_Y_DCT[T0])

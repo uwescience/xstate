@@ -30,14 +30,12 @@ def processExpressionData(data_file, data_dir=cn.SAMPLES_DIR,
   """
   svm_ensemble = make_svm_ensemble.make(
       file_path=parameter_file, is_force=False)
-  trinary = trinary_data.TrinaryData(
-      is_display_errors=is_display_errors)
+  trinary = trinary_data.TrinaryData()
   inv_dct = {v: k for k, v in trinary.state_dct.items()}
   path = os.path.join(data_dir, data_file)
   df_trinary = transform_data.trinaryReadsDF(
       csv_file=path,
-      is_time_columns=False,
-      is_display_errors=is_display_errors)
+      is_time_columns=False)
   df_classes = svm_ensemble.predict(df_trinary.T)
   columns = [inv_dct[v] for v in df_classes.columns]
   df_classes.columns = [inv_dct[v] for v in df_classes.columns]
