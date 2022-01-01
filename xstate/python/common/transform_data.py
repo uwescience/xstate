@@ -213,9 +213,9 @@ def calcTrinaryComparison(df, ser_ref, threshold=1, is_convert_log2=True):
   """
   Calculates trinary values of a DataFrame w.r.t. a reference in
   log2 units.
-  :param pd.Series ser_ref: reference values
   :param pd.DataFrame df: comparison values; columns are instances,
       has same inde as ser_ref
+  :param pd.Series ser_ref: reference values
   :param float threshold: comparison threshold.
   :param bool is_convert_log2: convert to log2
   :return pd.DataFrame: trinary values resulting from comparisons

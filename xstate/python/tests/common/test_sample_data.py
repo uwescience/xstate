@@ -8,8 +8,8 @@ import pandas as pd
 import unittest
 
 
-IGNORE_TEST = True
-IS_PLOT = True
+IGNORE_TEST = False
+IS_PLOT = False
 
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 PERSISTER_PATH = os.path.join(TEST_DIR, "test_sample_data_persister.pcl")
@@ -17,13 +17,16 @@ PERSISTER = Persister(PERSISTER_PATH)
 if PERSISTER.isExist():
   SAMPLE_DATA = PERSISTER.get()
   if SAMPLE_DATA is None:
-    print("***Proceeding without SAMPLE_DATA")
-else:
+    got_sample = False
+  else:
+    got_sample = True
+if not got_sample:
   try:
     SAMPLE_DATA = sample_data.getSampleData()
     SAMPLE_DATA.initialize()
   except:
     SAMPLE_DATA = None
+    print("***Proceeding without SAMPLE_DATA")
   PERSISTER.set(SAMPLE_DATA)
 
 
@@ -53,39 +56,57 @@ class TestSampleData(unittest.TestCase):
       return
     self.assertIsNone(self.data.df_galagan)
 
-  # TODO: tests for each of the cases for data initialization
-  #         is_regulator, ref_type, is_average
-  def testInitialize(self):
-    # TESTING
-    self.data.initialize()
+  def testInitializeBase(self):
+    if IGNORE_TEST:
+      return
+    data_base = sample_data.SampleData(is_regulator=True)
+    data_base.initialize()
     for sample_name in sample_data.SAMPLES:
-      df = self.data.getDataframe(sample_name)
+      df = data_base.getDataframe(sample_name)
       self.assertTrue(isinstance(df, pd.DataFrame))
-    import pdb; pdb.set_trace()
+    # Regulators
+    data_regulator = sample_data.SampleData(is_regulator=True)
+    data_regulator.initialize()
+    for sample_name in sample_data.SAMPLES:
+      df = data_regulator.getDataframe(sample_name)
+      self.assertTrue(isinstance(df, pd.DataFrame))
+      df_base = data_base.getDataframe(sample_name)
+      self.assertGreaterEqual(len(df_base.columns), len(df.columns))
+      self.assertEqual(len(df_base), len(df))
+    # Average
+    data_average = sample_data.SampleData(is_average=True)
+    data_average.initialize()
+    for sample_name in sample_data.SAMPLES:
+      df = data_average.getDataframe(sample_name)
+      self.assertTrue(isinstance(df, pd.DataFrame))
+      df_base = data_base.getDataframe(sample_name)
+      self.assertEqual(len(df_base.columns), len(df.columns))
+      self.assertGreaterEqual(len(df_base), len(df))
 
-  def testGetGalaganData(self):
+  def testInitializeRefTypeSelf(self):
     if IGNORE_TEST:
       return
-    df = self.data._getGalaganData()
-    trues = ["Rv" in c for c in df.columns]
-    self.isValidDataframe(df, df.columns)
+    data = sample_data.SampleData(ref_type=sample_data.REF_TYPE_SELF)
+    data.initialize()
+    for sample_name in sample_data.SAMPLES:
+      df = data.getDataframe(sample_name)
+      self.assertTrue(isinstance(df, pd.DataFrame))
 
-  def testGetGSE167232(self):
+  def testInitializeRefTypePooled(self):
     if IGNORE_TEST:
       return
-    is_regulator = False
-    is_display_errors = True
-    lastDF = self.data._getGSE167232()
-    for _ in range(5):
-      newDF = self.data._getGSE167232()
-      self.assertTrue(newDF.equals(lastDF))
+    data = sample_data.SampleData(ref_type=sample_data.REF_TYPE_POOLED)
+    data.initialize()
+    for sample_name in sample_data.SAMPLES:
+      df = data.getDataframe(sample_name)
+      self.assertTrue(isinstance(df, pd.DataFrame))
 
   def testGetSampleData(self):
     if IGNORE_TEST:
       return
     def getDFS(sample):
       return [sample.df_AW, sample.df_AM_MDM, sample.df_galagan,
-          sample.df_sherman, sample.df_GSE167232]
+          sample.df_GSE167232, sample.df_rustad]
     #
     def test_single(**kwargs):
       sample = sample_data.getSampleData(**kwargs)

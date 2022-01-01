@@ -59,19 +59,20 @@ REPLICA_STRINGS_RUSTAD = ["H37Rv_hypoxia_%s" % s for s
 # nrml: Normalized for gene length and library size
 # sel: Reference selection function used in REF_TYPE_SELF
 # rpl: Strings that identify replicas
-SampleEntry = collections.namedtuple("SampleEntry", "csv log2 nrml sel rpl")
-SAMPLE_ENTRY_DCT = {"AM_MDM": SampleEntry(csv=FILE_AM_MDM, log2=True, nrml=True,
-                        sel=REFSEL_FUNC_AM_MDM, rpl=REPLICA_STRINGS_AM_MDM),
-                   "AW": SampleEntry(csv=FILE_AW, log2=True, nrml=True,
-                        sel=REFSEL_FUNC_AW, rpl=REPLICA_STRINGS_AW),
-                   "galagan": SampleEntry(csv=FILE_GALAGAN, log2=True, nrml=True,
-                        sel=REFSEL_FUNC_GALAGAN, rpl=REPLICA_STRINGS_GALAGAN),
-                   "rustad": SampleEntry(csv=FILE_RUSTAD, log2=True, nrml=True,
-                        sel=REFSEL_FUNC_RUSTAD, rpl=REPLICA_STRINGS_RUSTAD),
-                   "GSE167232": SampleEntry(csv=FILE_GSE167232, log2=False, nrml=True,
-                        sel=REFSEL_FUNC_GSE167232, rpl=REPLICA_STRINGS_GSE167232),
-                   }
-SAMPLES = list(SAMPLE_ENTRY_DCT.keys())
+SampleDescriptor = collections.namedtuple("SampleDescriptor", "csv log2 nrml sel rpl")
+SAMPLE_DESCRIPTOR_DCT = {
+    "AM_MDM": SampleDescriptor(csv=FILE_AM_MDM, log2=False, nrml=True,
+              sel=REFSEL_FUNC_AM_MDM, rpl=REPLICA_STRINGS_AM_MDM),
+    "AW": SampleDescriptor(csv=FILE_AW, log2=True, nrml=True,
+          sel=REFSEL_FUNC_AW, rpl=REPLICA_STRINGS_AW),
+    "galagan": SampleDescriptor(csv=FILE_GALAGAN, log2=True, nrml=True,
+               sel=REFSEL_FUNC_GALAGAN, rpl=REPLICA_STRINGS_GALAGAN),
+    "rustad": SampleDescriptor(csv=FILE_RUSTAD, log2=True, nrml=True,
+              sel=REFSEL_FUNC_RUSTAD, rpl=REPLICA_STRINGS_RUSTAD),
+    "GSE167232": SampleDescriptor(csv=FILE_GSE167232, log2=False, nrml=True,
+                 sel=REFSEL_FUNC_GSE167232, rpl=REPLICA_STRINGS_GSE167232),
+    }
+SAMPLES = list(SAMPLE_DESCRIPTOR_DCT.keys())
 
 
 ################## FUNCTIONS ###############
@@ -176,16 +177,16 @@ class SampleData(object):
     Construct the feature vectors for the samples.
     """
     # Iterate across all samples
-    for sample_name, sample_entry in SAMPLE_ENTRY_DCT.items():
+    for sample_name, descriptor in SAMPLE_DESCRIPTOR_DCT.items():
       attribute_name = self.getDataframeAttributeName(sample_name)
       ###
       # Construct a data frame that is normalized for gene and library
       # and has log2 units
       ###
-      df = transform_data.readGeneCSV(sample_entry.csv)
-      if not sample_entry.nrml:
+      df = transform_data.readGeneCSV(descriptor.csv).T
+      if not descriptor.nrml:
         raise RuntimeError("Do gene normalization for sample %s" % sample_name)
-      if not sample_entry.log2:
+      if not descriptor.log2:
         df = util.convertToLog2(df)
       ###
       # Convert to trinary values. This takes into account the reference values
@@ -193,29 +194,27 @@ class SampleData(object):
       ###
       if self.ref_type == REF_TYPE_BIOREACTOR:
         ser_ref = transform_data.makeBioreactorT0ReferenceData()
-      elif (self.ref_type == REF_TYPE_POOLED) \
-          or ((self.ref_type == REF_TYPE_SELF) and (sample_entry.rpl is None)):
+      elif self.ref_type == REF_TYPE_POOLED:
         ser_ref = df.mean(axis=0)
       elif self.ref_type == REF_TYPE_SELF:
-        ser_ref = self._calcRefFromIndices(df, sample_entry.sel)
+        if descriptor.sel is None:
+          print("***%s: no selection for reference type 'self'. Using 'pooled'."
+              % sample_name)
+          ser_ref = df.mean(axis=0)
+        else:
+          ser_ref = self._calcRefFromIndices(df, descriptor.sel)
       else:
         raise RuntimeError("%s is an invalid reference type" % self.ref_type)
       ###
       # Average replicas if requested
       ###
       if self.is_average:
-        df = self.averageReplicas(df, sample_entry.rpl)
-        COL = "col"
-        df_ref = pd.DataFrame({COL: ser_ref})
-        df_ref = self.averageReplicas(df_ref, sample_entry.rpl)
-        ser_ref = df_ref[COL]
-        import pdb; pdb.set_trace()
+        df = self.averageReplicas(df, descriptor.rpl)
       ###
       # Convert to trinary values
       ###
-      df = transform_data.calcTrinaryComparison(df, ser_ref,
-          is_convert_log2=False)
-      df = df.T
+      df = transform_data.calcTrinaryComparison(df.T, ser_ref,
+          is_convert_log2=False).T
       ###
       # Restrict to regulators?
       ###
@@ -267,16 +266,6 @@ class SampleData(object):
     ref_idxs = [i for i in df.index if selrefFunc(i)]
     df_ref = df.loc[ref_idxs, :]
     return df_ref.mean()
-
-  def _getGSE167232(self):
-    df = transform_data.trinaryReadsDF(
-        csv_file=FILE_GSE167232,
-        is_display_errors=self.is_display_errors,
-        is_normalized=True,
-        is_time_columns=False).T
-    if self.is_regulator:
-      trinary_data.subsetToRegulators(df)
-    return df
 
   def serialize(self, directory=cn.TRINARY_SAMPLES_DIR):
     """
