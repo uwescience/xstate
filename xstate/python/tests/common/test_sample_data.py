@@ -191,6 +191,13 @@ class TestSampleData(unittest.TestCase):
     self.assertEqual(len(dfs), len(sample_data.SAMPLES))
     for df in dfs:
       self.assertTrue(isinstance(df, pd.DataFrame))
+
+  def testMakeSortKey(self):
+    if IGNORE_TEST:
+      return
+    result1 = SAMPLE_DATA._makeSortKey("AW", "AW_plus_1")
+    result2 = SAMPLE_DATA._makeSortKey("AW", "AW_neg_2")
+    self.assertGreater(result2, result1)
     
 
 if __name__ == '__main__':

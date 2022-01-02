@@ -92,7 +92,7 @@ class ClassificationData():
     # Gene Classes
     ALL_GENES = list(TRINARY.df_X.columns)
     self._addName("ALL_GENES", ALL_GENES)
-    # Gene groupings
+    # Gene groupings. Added later so can include top12 from classifier
     MYCOBACTIN_GENES = [
       "Rv2377c",
       "Rv2378c",
@@ -122,11 +122,6 @@ class ClassificationData():
                 MYCOBACTIN_BACTERIOFERRITIN: MYCOBACTIN_BACTERIOFERRIN_GENES,
                 ALL: ALL_GENES,
                }
-    GENE_GROUPS = list(GENE_DCT.keys())
-    self._addName("GENE_GROUPS", GENE_GROUPS)
-    for name in GENE_GROUPS:
-      self._addName(name.upper(), name)
-    self._addName("GENE_DCT", GENE_DCT)
     # Define the stage names
     STAGE_NAMES = list(cn.STATE_NAMES)
     self._addName("STAGE_NAMES", STAGE_NAMES)
@@ -170,6 +165,18 @@ class ClassificationData():
         df_X = dataframe.subset(trinary.df_X, gene_list, axis=1)
         classifier.fit(df_X, trinary.ser_y, class_names=STAGE_NAMES)
         CLASSIFIER_DCT[(trinary_key, gene_key)] = classifier
+    # Calculate the rest of the gene groups and add them
+    TOP12_T0 = "top12_T0"
+    TOP12_POOLED = "top12_pooled"
+    TOP12_T0_GENES = list(CLASSIFIER_DCT[(T0, ALL)].columns)
+    TOP12_POOLED_GENES = list(CLASSIFIER_DCT[(POOLED, ALL)].columns)
+    GENE_DCT[TOP12_T0] = TOP12_T0_GENES
+    GENE_DCT[TOP12_POOLED] = TOP12_POOLED_GENES
+    GENE_GROUPS = list(GENE_DCT.keys())
+    self._addName("GENE_GROUPS", GENE_GROUPS)
+    for name in GENE_GROUPS:
+      self._addName(name.upper(), name)  # Add the name of each group
+    self._addName("GENE_DCT", GENE_DCT)
     # Construct derivative structures    
     self._addName("DF_X", DF_X_DCT[T0])
     self._addName("SER_Y", SER_Y_DCT[T0])

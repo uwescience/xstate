@@ -158,6 +158,8 @@ class TestTrinaryData(unittest.TestCase):
     trinary = TrinaryData()
     trinary.plotExpressionLevels(GENES, is_plot=IS_PLOT, title="title")
     trinary.plotExpressionLevels(GENES, df_X=trinary.df_X, is_plot=IS_PLOT)
+    trinary.plotExpressionLevels(GENES, is_plot=IS_PLOT, title="title",
+        is_color_bar=False)
 
   def testSerializeFeatureMatrix(self):
     if IGNORE_TEST:

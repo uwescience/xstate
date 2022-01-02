@@ -172,7 +172,7 @@ class TrinaryData(NormalizedData):
 
   def plotFeatureSignificanceByState(self,
       max_sl=0.25, max_rank=50, is_plot=True,
-      figsize=(8, 6)):
+      figsize=(8, 6), is_color_bar=True):
     """
     Constructs a heatmap of F-statistic significance 
     levels by state.
@@ -196,7 +196,8 @@ class TrinaryData(NormalizedData):
     ax.set_yticklabels(df_plot.index, rotation=0)
     ax.set_xlabel("State")
     heatmap = plt.pcolor(df_plot)
-    _ = plt.colorbar(heatmap)
+    if is_color_bar:
+      _ = plt.colorbar(heatmap)
     if is_plot:
       plt.show()
 
@@ -245,7 +246,8 @@ class TrinaryData(NormalizedData):
     rev_dct = {v: k for k, v in self.state_dct.items()}
     return [rev_dct[i] for i in state_ints]
 
-  def plotExpressionLevels(self, features, df_X=None, is_plot=True, title=""):
+  def plotExpressionLevels(self, features, df_X=None,
+      is_plot=True, title="", figsize=(20, 5), is_color_bar=True):
     """
     Heat map of expression levels for features. Shades states.
     
@@ -264,11 +266,13 @@ class TrinaryData(NormalizedData):
     ROTATION = 30
     FONTSIZE = 14
     # Shade replications
-    fig, ax = plt.subplots(1, figsize=(20, 5))
+    fig, ax = plt.subplots(1, figsize=figsize)
     columns = list(set(features).intersection(df_X.columns))
     columns.sort()
-    new_df_X = df_X[columns]
-    sns.heatmap(new_df_X.T, cmap="seismic", ax=ax, vmin=-1, vmax=1)
+    new_df_X = df_X.copy()
+    new_df_X = new_df_X[columns]
+    sns.heatmap(new_df_X.T, cmap="seismic", ax=ax, vmin=-1, vmax=1,
+        cbar=is_color_bar)
     # Shade the classes
     if ser_y is not None:
       alphas = [0.0, 0.4]

@@ -13,17 +13,12 @@ averaging is done in log2 units.
 import common.constants as cn
 from common import trinary_data
 from common import util
-from common.data_provider import DataProvider
 from common import transform_data
 
 import collections
 import os
 import pandas as pd
 
-T1_INDEX = "T1"
-MIN_NUM_NORMOXIA = 2  # Minimum number of normoxia states
-PROVIDER = DataProvider(is_display_errors=False)
-PROVIDER.do()
 # Reference types
 REF_TYPE_BIOREACTOR = "ref_type_bioreactor"  # Use bioreactor data as reference
 REF_TYPE_SELF = "ref_type_self"  # Internal reference
@@ -49,7 +44,7 @@ REFSEL_FUNC_RUSTAD = lambda i: ("_4hr_" in i) and ("rep6" not in i)
 # Strings that identifies a grouping of replicas
 REPLICA_STRINGS_AM_MDM = ["AM", "MDM"]
 REPLICA_STRINGS_AW = ["AW_plus", "AW_neg"]
-REPLICA_STRINGS_GALAGAN = ["d1", "d2", "d3", "d5", "d7", "d8"]
+REPLICA_STRINGS_GALAGAN = ["t0h", "d1", "d2", "d3", "d5", "d7", "d8"]
 REPLICA_STRINGS_GSE167232 = ["TB_HIGH", "TB_LOW", "TB_AM", "TB_IM"]
 REPLICA_STRINGS_RUSTAD = ["H37Rv_hypoxia_%s" % s for s
     in ["4hr", "8hr", "12hr", "1day", "4day", "7day"]]
@@ -59,7 +54,8 @@ REPLICA_STRINGS_RUSTAD = ["H37Rv_hypoxia_%s" % s for s
 # nrml: Normalized for gene length and library size
 # sel: Reference selection function used in REF_TYPE_SELF
 # rpl: Strings that identify replicas
-SampleDescriptor = collections.namedtuple("SampleDescriptor", "csv log2 nrml sel rpl")
+SampleDescriptor = collections.namedtuple("SampleDescriptor",
+    "csv log2 nrml sel rpl")
 SAMPLE_DESCRIPTOR_DCT = {
     "AM_MDM": SampleDescriptor(csv=FILE_AM_MDM, log2=False, nrml=True,
               sel=REFSEL_FUNC_AM_MDM, rpl=REPLICA_STRINGS_AM_MDM),
@@ -186,12 +182,40 @@ class SampleData(object):
     Parameters
     ----------
     sample_name: str
-    
+
     Returns
+    -------
     DataFrame
     -------
     """
     return self.getDataframe(sample_name)
+
+  def _makeSortKey(self, sample_name, instance_name):
+    """
+    Creates a sort key based on the order of the replica names.
+
+    Parameters
+    ----------
+    sample_name: str
+    instance_name: str
+        instance as named in the index
+    
+    Returns
+    -------
+    int
+    """
+    descriptor = SAMPLE_DESCRIPTOR_DCT[sample_name]
+    replica_strings = descriptor.rpl
+    results = [i for i, s in enumerate(replica_strings) if s in instance_name]
+    if len(results) == 1:
+      result = results[0]
+    elif len(results) != 0:
+      result = len(replica_strings)
+    else:
+      raise RuntimeError(
+         "Could not find replica string for sample %s, instance %s"
+          % (sample_name, instance_name))
+    return result
 
   def initialize(self):
     """
@@ -204,7 +228,13 @@ class SampleData(object):
       # Construct a data frame that is normalized for gene and library
       # and has log2 units
       ###
+      # Select indices used as replicas
       df = transform_data.readGeneCSV(descriptor.csv).T
+      sel = [ any([d in i for d in descriptor.rpl]) for i in df.index]
+      df = df[sel]
+      # Sort the instances and complete initial processing
+      indices = sorted(df.index, key=lambda v: self._makeSortKey(sample_name, v))
+      df.index = indices
       if not descriptor.nrml:
         raise RuntimeError("Do gene normalization for sample %s" % sample_name)
       if not descriptor.log2:
