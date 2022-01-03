@@ -44,6 +44,7 @@ class TestSampleData(unittest.TestCase):
     diff = set(df.columns).symmetric_difference(columns)
     self.assertEqual(len(diff), 0)
     self.assertGreater(len(df), 0)
+    self.assertGreater(len(df.columns), 0)
 
   def setUp(self):
     self._remove()
@@ -91,7 +92,8 @@ class TestSampleData(unittest.TestCase):
     data.initialize()
     for sample_name in sample_data.SAMPLES:
       df = data.getDataframe(sample_name)
-      self.assertTrue(isinstance(df, pd.DataFrame))
+      if df is not None:
+        self.assertTrue(isinstance(df, pd.DataFrame))
 
   def testInitializeRefTypePooled(self):
     if IGNORE_TEST:
@@ -101,6 +103,13 @@ class TestSampleData(unittest.TestCase):
     for sample_name in sample_data.SAMPLES:
       df = data.getDataframe(sample_name)
       self.assertTrue(isinstance(df, pd.DataFrame))
+
+  def testRefTypeSelfRustad(self):
+    if IGNORE_TEST:
+      return
+    sample = sample_data.getSampleData(ref_type=sample_data.REF_TYPE_SELF)
+    df = sample["rustad"]
+    self.isValidDataframe(df, df.columns)
 
   def testGetSampleData(self):
     if IGNORE_TEST:
@@ -112,17 +121,21 @@ class TestSampleData(unittest.TestCase):
     def test_single(**kwargs):
       sample = sample_data.getSampleData(**kwargs)
       for df in getDFS(sample):
-        self.isValidDataframe(df, df.columns)
-        self.assertTrue(np.abs(df.mean().mean()) < np.inf) 
+        if df is not None:
+          self.isValidDataframe(df, df.columns)
+          self.assertTrue(np.abs(df.mean().mean()) < np.inf) 
       return sample
     #
     def test_greater(sample_large, sample_small):
       dfs_large = getDFS(sample_large)
       dfs_small = getDFS(sample_small)
       for idx in range(len(dfs_large)):
-        self.assertGreater(
-            len(dfs_large[idx].columns),
-            len(dfs_small[idx].columns))
+        if dfs_large[idx] is None:
+          self.assertIsNone(dfs_small[idx])
+        else:
+          self.assertGreater(
+              len(dfs_large[idx].columns),
+              len(dfs_small[idx].columns))
     # Non-default reference
     ref_types = [
         sample_data.REF_TYPE_BIOREACTOR,

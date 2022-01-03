@@ -40,33 +40,54 @@ REFSEL_FUNC_AM_MDM = lambda i: ("AM" in i) and (not "1" in i)
 REFSEL_FUNC_AW = lambda i: ("neg" in i) and (not "1" in i)
 REFSEL_FUNC_GALAGAN = lambda i: ("d1." in i) and ("rep1" not in i)
 REFSEL_FUNC_GSE167232 = None
-REFSEL_FUNC_RUSTAD = lambda i: ("_4hr_" in i) and ("rep6" not in i)
-# Strings that identifies a grouping of replicas
-REPLICA_STRINGS_AM_MDM = ["AM", "MDM"]
-REPLICA_STRINGS_AW = ["AW_plus", "AW_neg"]
-REPLICA_STRINGS_GALAGAN = ["t0h", "d1", "d2", "d3", "d5", "d7", "d8"]
-REPLICA_STRINGS_GSE167232 = ["TB_HIGH", "TB_LOW", "TB_AM", "TB_IM"]
-REPLICA_STRINGS_RUSTAD = ["H37Rv_hypoxia_%s" % s for s
+REFSEL_FUNC_RUSTAD = lambda i: ("_4hr_" in i) 
+# TODO: remove this logic since using all replications to calculate reference
+#   and any([r in i for r in ["rep1", "rep2", "rep3"]])
+# Strings that identify conditions (which is a grouping of replicas).
+# For progression data, the condition strings are times. They are
+# ordered in sequence from early to late.
+CONDITION_STRINGS_AM_MDM = ["AM", "MDM"]
+CONDITION_STRINGS_AW = ["AW_plus", "AW_neg"]
+CONDITION_STRINGS_GALAGAN = ["t0h", "d1", "d2", "d3", "d5", "d7", "d8"]
+CONDITION_STRINGS_GSE167232 = ["TB_HIGH", "TB_LOW", "TB_AM", "TB_IM"]
+CONDITION_STRINGS_RUSTAD = ["H37Rv_hypoxia_%s" % s for s
     in ["4hr", "8hr", "12hr", "1day", "4day", "7day"]]
+# Strings that name replicas
+REPLICA_NAMES_AM_MDM = ["_1", "_3", "_4", "_5"]
+REPLICA_NAMES_AW = ["_1", "_3", "_4"]
+REPLICA_NAMES_GALAGAN = ["rep1", "rep2", "rep3"]
+REPLICA_NAMES_GSE167232 = ["1", "2", "3"]
+REPLICA_NAMES_RUSTAD = ["rep1", "rep2", "rep3"]
 # Describes data in the file
 # csv: CSV file
 # log2: True if in log2 units
 # nrml: Normalized for gene length and library size
 # sel: Reference selection function used in REF_TYPE_SELF
-# rpl: Strings that identify replicas
+# cnm: Strings that identify conditions or time
+# rnm: Strings that name the replicas
 SampleDescriptor = collections.namedtuple("SampleDescriptor",
-    "csv log2 nrml sel rpl")
+    "csv log2 nrml sel cnm rnm")
 SAMPLE_DESCRIPTOR_DCT = {
     "AM_MDM": SampleDescriptor(csv=FILE_AM_MDM, log2=False, nrml=True,
-              sel=REFSEL_FUNC_AM_MDM, rpl=REPLICA_STRINGS_AM_MDM),
+              sel=REFSEL_FUNC_AM_MDM,
+              cnm=CONDITION_STRINGS_AM_MDM,
+              rnm=REPLICA_NAMES_AM_MDM),
     "AW": SampleDescriptor(csv=FILE_AW, log2=True, nrml=True,
-          sel=REFSEL_FUNC_AW, rpl=REPLICA_STRINGS_AW),
+          sel=REFSEL_FUNC_AW,
+          cnm=CONDITION_STRINGS_AW,
+          rnm=REPLICA_NAMES_AW),
     "galagan": SampleDescriptor(csv=FILE_GALAGAN, log2=True, nrml=True,
-               sel=REFSEL_FUNC_GALAGAN, rpl=REPLICA_STRINGS_GALAGAN),
+               sel=REFSEL_FUNC_GALAGAN,
+               cnm=CONDITION_STRINGS_GALAGAN,
+               rnm=REPLICA_NAMES_GALAGAN),
     "rustad": SampleDescriptor(csv=FILE_RUSTAD, log2=True, nrml=True,
-              sel=REFSEL_FUNC_RUSTAD, rpl=REPLICA_STRINGS_RUSTAD),
+              sel=REFSEL_FUNC_RUSTAD,
+              cnm=CONDITION_STRINGS_RUSTAD,
+              rnm=REPLICA_NAMES_RUSTAD),
     "GSE167232": SampleDescriptor(csv=FILE_GSE167232, log2=False, nrml=True,
-                 sel=REFSEL_FUNC_GSE167232, rpl=REPLICA_STRINGS_GSE167232),
+                 sel=REFSEL_FUNC_GSE167232,
+                 cnm=CONDITION_STRINGS_GSE167232,
+                 rnm=REPLICA_NAMES_GSE167232),
     }
 SAMPLES = list(SAMPLE_DESCRIPTOR_DCT.keys())
 
@@ -205,12 +226,12 @@ class SampleData(object):
     int
     """
     descriptor = SAMPLE_DESCRIPTOR_DCT[sample_name]
-    replica_strings = descriptor.rpl
-    results = [i for i, s in enumerate(replica_strings) if s in instance_name]
+    condition_strings = descriptor.cnm
+    results = [i for i, s in enumerate(condition_strings) if s in instance_name]
     if len(results) == 1:
       result = results[0]
     elif len(results) != 0:
-      result = len(replica_strings)
+      result = len(condition_strings)
     else:
       raise RuntimeError(
          "Could not find replica string for sample %s, instance %s"
@@ -228,9 +249,9 @@ class SampleData(object):
       # Construct a data frame that is normalized for gene and library
       # and has log2 units
       ###
-      # Select indices used as replicas
+      # Select indices that are for the conditions/times considered
       df = transform_data.readGeneCSV(descriptor.csv).T
-      sel = [ any([d in i for d in descriptor.rpl]) for i in df.index]
+      sel = [ any([d in i for d in descriptor.cnm]) for i in df.index]
       df = df[sel]
       # Sort the instances and complete initial processing
       indices = sorted(df.index, key=lambda v: self._makeSortKey(sample_name, v))
@@ -249,53 +270,54 @@ class SampleData(object):
         ser_ref = df.mean(axis=0)
       elif self.ref_type == REF_TYPE_SELF:
         if descriptor.sel is None:
-          print("***%s: no selection for reference type 'self'. Using 'pooled'."
+          print("***%s: no selection for reference type 'self'. Result is None."
               % sample_name)
-          ser_ref = df.mean(axis=0)
+          df = None
         else:
           ser_ref = self._calcRefFromIndices(df, descriptor.sel)
       else:
         raise RuntimeError("%s is an invalid reference type" % self.ref_type)
-      ###
-      # Average replicas if requested
-      ###
-      if self.is_average:
-        df = self.averageReplicas(df, descriptor.rpl)
-      ###
-      # Convert to trinary values
-      ###
-      df = transform_data.calcTrinaryComparison(df.T, ser_ref,
-          is_convert_log2=False).T
-      ###
-      # Restrict to regulators?
-      ###
-      if self.is_regulator:
-        trinary_data.subsetToRegulators(df)
+      if df is not None:
+        ###
+        # Average replicas if requested
+        ###
+        if self.is_average:
+          df = self.averageReplicas(df, descriptor.cnm)
+        ###
+        # Convert to trinary values
+        ###
+        df = transform_data.calcTrinaryComparison(df.T, ser_ref,
+            is_convert_log2=False).T
+        ###
+        # Restrict to regulators?
+        ###
+        if self.is_regulator:
+          trinary_data.subsetToRegulators(df)
       #
       self.__setattr__(attribute_name, df)
 
   @staticmethod
-  def averageReplicas(df, replica_names):
+  def averageReplicas(df, condition_names):
     """
     Constructs a dataframe in which columns are averaged for indices that
-    contain the same replica name.
+    are for the same condition.
 
     Parameters
     ----------
     df: pd.DataFrame
-    replica_names: list-str
+    condition_names: list-str
 
     Returns
     -------
     pd.DataFrame
     """
     sers = []
-    for name in replica_names:
+    for name in condition_names:
       indices = [i for i in df.index if name in i]
       sers.append(df.loc[indices, :].mean())
     df_result = pd.concat(sers, axis=1)
     df_result = df_result.T
-    df_result.index = replica_names
+    df_result.index = condition_names
     return df_result
 
   @staticmethod
