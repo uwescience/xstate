@@ -51,7 +51,7 @@ CONDITION_STRINGS_AW = ["AW_plus", "AW_neg"]
 CONDITION_STRINGS_GALAGAN = ["t0h", "d1", "d2", "d3", "d5", "d7", "d8"]
 CONDITION_STRINGS_GSE167232 = ["TB_HIGH", "TB_LOW", "TB_AM", "TB_IM"]
 CONDITION_STRINGS_RUSTAD = ["H37Rv_hypoxia_%s" % s for s
-    in ["4hr", "8hr", "12hr", "1day", "4day", "7day"]]
+    in [ "4hr", "8hr", "12hr", "1day", "4day", "7day"]]
 # Strings that name replicas
 REPLICA_NAMES_AM_MDM = ["_1", "_3", "_4", "_5"]
 REPLICA_NAMES_AW = ["_1", "_3", "_4"]
