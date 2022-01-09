@@ -246,7 +246,7 @@ class TrinaryData(NormalizedData):
     rev_dct = {v: k for k, v in self.state_dct.items()}
     return [rev_dct[i] for i in state_ints]
 
-  def plotExpressionLevels(self, features, df_X=None,
+  def plotExpressionLevels(self, features, df_X=None, ser_y=None,
       is_plot=True, title="", figsize=(20, 5), is_color_bar=True):
     """
     Heat map of expression levels for features. Shades states.
@@ -256,12 +256,11 @@ class TrinaryData(NormalizedData):
     features: list-str
     df_X: DataFrame (feature vector)
         if non-None, then this feature vector is used instead of self.df_X
+    ser_y: Series (classes)
     """
     if df_X is None:
       df_X = self.df_X
       ser_y = self.ser_y
-    else:
-      ser_y = None
     # Internal constants
     ROTATION = 30
     FONTSIZE = 14
