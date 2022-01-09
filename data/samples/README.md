@@ -28,6 +28,10 @@ The data is from Pisu et al 2021 (attached), it is MTB from lung macrophages of 
 The data are normalized for library size and gene size but are not
 in log2 units.
 
+## GSE167232\_mtb\_transcriptome\_counts\_normalized_reduced.csv
+* Created on 1/7/2022.
+* Deleted columns other than TB\_HIGH* and TB\_LOW*
+
 
 ``GSE167232\_mtb\_transcriptome\_counts\_normalized\_filtered.csv``
 is the same data but removes all lines with "N/A" and deletes the

@@ -35,12 +35,14 @@ FILE_AM_MDM = "AM_MDM_Mtb_transcripts_DEseq.csv"
 FILE_AW = "AW_plus_v_AW_neg_Mtb_transcripts_DEseq.csv"
 FILE_RUSTAD = "rustad_hypoxia_dataset_GSE9331.csv"
 FILE_GSE167232 = "GSE167232_mtb_transcriptome_counts_normalized_filtered.csv"
+FILE_GSE167232R = "GSE167232_mtb_transcriptome_counts_normalized_filtered_reduced.csv"
 # Functions for selecting instances that are reference values for gene expression
 REFSEL_FUNC_AM_MDM = lambda i: ("AM" in i) and (not "1" in i)
 REFSEL_FUNC_AW = lambda i: ("neg" in i) and (not "1" in i)
 REFSEL_FUNC_GALAGAN = lambda i: ("d1." in i) and ("rep1" not in i)
 REFSEL_FUNC_GSE167232 = None
-REFSEL_FUNC_RUSTAD = lambda i: ("_4hr_" in i) 
+REFSEL_FUNC_GSE167232R = lambda i: "TB_LOW" in i
+REFSEL_FUNC_RUSTAD = lambda i: "_4hr_" in i 
 # TODO: remove this logic since using all replications to calculate reference
 #   and any([r in i for r in ["rep1", "rep2", "rep3"]])
 # Strings that identify conditions (which is a grouping of replicas).
@@ -50,6 +52,7 @@ CONDITION_STRINGS_AM_MDM = ["AM", "MDM"]
 CONDITION_STRINGS_AW = ["AW_plus", "AW_neg"]
 CONDITION_STRINGS_GALAGAN = ["t0h", "d1", "d2", "d3", "d5", "d7", "d8"]
 CONDITION_STRINGS_GSE167232 = ["TB_HIGH", "TB_LOW", "TB_AM", "TB_IM"]
+CONDITION_STRINGS_GSE167232R = ["TB_HIGH", "TB_LOW"]
 CONDITION_STRINGS_RUSTAD = ["H37Rv_hypoxia_%s" % s for s
     in [ "4hr", "8hr", "12hr", "1day", "4day", "7day"]]
 # Strings that name replicas
@@ -57,6 +60,7 @@ REPLICA_NAMES_AM_MDM = ["_1", "_3", "_4", "_5"]
 REPLICA_NAMES_AW = ["_1", "_3", "_4"]
 REPLICA_NAMES_GALAGAN = ["rep1", "rep2", "rep3"]
 REPLICA_NAMES_GSE167232 = ["1", "2", "3"]
+REPLICA_NAMES_GSE167232R = REPLICA_NAMES_GSE167232
 REPLICA_NAMES_RUSTAD = ["rep1", "rep2", "rep3"]
 # Describes data in the file
 # csv: CSV file
@@ -88,6 +92,10 @@ SAMPLE_DESCRIPTOR_DCT = {
                  sel=REFSEL_FUNC_GSE167232,
                  cnm=CONDITION_STRINGS_GSE167232,
                  rnm=REPLICA_NAMES_GSE167232),
+    "GSE167232R": SampleDescriptor(csv=FILE_GSE167232R, log2=False, nrml=True,
+                  sel=REFSEL_FUNC_GSE167232R,
+                  cnm=CONDITION_STRINGS_GSE167232R,
+                  rnm=REPLICA_NAMES_GSE167232R),
     }
 SAMPLES = list(SAMPLE_DESCRIPTOR_DCT.keys())
 

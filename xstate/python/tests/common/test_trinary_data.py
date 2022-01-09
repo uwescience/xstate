@@ -158,6 +158,8 @@ class TestTrinaryData(unittest.TestCase):
     trinary = TrinaryData()
     trinary.plotExpressionLevels(GENES, is_plot=IS_PLOT, title="title")
     trinary.plotExpressionLevels(GENES, df_X=trinary.df_X, is_plot=IS_PLOT)
+    trinary.plotExpressionLevels(GENES, df_X=trinary.df_X, 
+        ser_y=trinary.ser_y, is_plot=IS_PLOT)
     trinary.plotExpressionLevels(GENES, is_plot=IS_PLOT, title="title",
         is_color_bar=False)
 
