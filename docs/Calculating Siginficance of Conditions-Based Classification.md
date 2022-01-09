@@ -1,5 +1,23 @@
-# Calculating the Significance of Conditions-Based Classification
+# Scoring the Results of Conditions-Based Classification and Assessing its Statistical Significance
 
+This procedure is motivated by a need to assess the significance of outcomes of multiple methods for constructing classifiers and preparation of test data.
+
+## Scoring
+
+An ideal result is that the predicted stage (class) is the same within a condition, and the predicted stage under distinct conditions differ. We can construct a score that quantifies this idea as follows.
+Let $y_{cr}$ be the class predicted for the $r^{th}$ replication of the $c^{th}$ class.
+Suppose there are $C$ conditions, each with $R$ replications.
+We want the mean sum of squares *within* conditions,
+$W = \frac{1}{R(C-1} \sum_c \sum_r (y_{rc} - \bar{y}_c)^2$ (where $\bar{y}_c$ 
+is the mean value within condition $c$), to be small.
+Also, we want the mean sum of square *between* conditions, 
+$B = \frac {1}{C - 1}\sum_c (\bar{y}_c - \bar{y})^2$,
+to be large. So, we score a plot by the ratio $\frac{B}{W}$.
+To handle cases in which $W = 0$, we use $\tilde{W}$ in the denominator, where $\tilde{W} = max(0.1, W)$.
+
+## Statistical Significance
+
+Now consider the statistical significance of obtaining a large score.
 We consider the following situation.
 An experiment produces one of $K$ outcomes.
 An experiment is conducted under a
@@ -35,6 +53,9 @@ Let $\tilde{P} (n)$ be the probability of an event for a condition.
 We assume that $n$ is large enough so that there can be an event for at most
 one outcome.
 Thus, $\tilde{P} (n) \approx \sum_k P_k (n) \prod_{l \neq k} (1 - P_l)$.
+Also, let $\cal{K}$ be a subset of the classes.
+We consider this probability if only a subset of classes are considered.
+That is, $\tilde{P} (n, \cal{K}) \approx \sum_{k \in \cal{K}} P_k (n) \prod_{l \neq k, l \in \cal{K}} (1 - P_l)$.
 
 Let $\tilde{Q} (n)$ be the probability that an event occurs for
 all conditions in a study.
