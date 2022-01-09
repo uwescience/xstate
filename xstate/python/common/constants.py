@@ -73,3 +73,7 @@ STATE_NAMES = ["Normoxia", "Transition",  "Stage1a", "Stage1b",
 
 # Data transformations
 MIN_VALUE = 10e-3  # Minimum value for an average count
+
+# Probabilities
+# Probability of states if not include T1
+STATE_PROBS = [n/25 for n in [6, 6, 5, 3, 5]]
