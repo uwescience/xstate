@@ -18,6 +18,8 @@ To handle cases in which $W = 0$, we use $\tilde{W}$ in the denominator, where $
 ## Statistical Significance
 
 Now consider the statistical significance of obtaining a large score.
+Actually, we calculate an upper bound that is the probability of a large score
+or a score of 0 (where all outcomes are the same).
 We consider the following situation.
 An experiment produces one of $K$ outcomes.
 An experiment is conducted under a
