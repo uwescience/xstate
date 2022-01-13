@@ -76,9 +76,7 @@ def serializeFeatureMatrix(df_X, path):
 class NormalizedData(object):
   """ Exposes values described above. """
 
-  def __init__(self,
-      is_averaged=True, is_regulator=False,
-      **kwargs):
+  def __init__(self, is_averaged=True, is_regulator=False, **kwargs):
     """
     :param bool is_averaged: Use averaged read counts
     :param bool is_regulator: use regulators for TRN
@@ -86,6 +84,7 @@ class NormalizedData(object):
 
     Public instance variables:
       df_X are normalized read counts
+          instances are either times (begin with T) for stage (S)
       ser_y - numeric value of state corresponding to each row in df_X
       self.state_dct:
           key: state name
@@ -143,7 +142,7 @@ class NormalizedData(object):
 
 class TrinaryData(NormalizedData):
 
-  def __init__(self, is_dropT1=True, **kwargs):
+  def __init__(self, is_dropT1=True, is_stage_averaged=False, **kwargs):
     """
     self.df_X
         columns: gene index
@@ -153,10 +152,35 @@ class TrinaryData(NormalizedData):
         index: times
         values: state index
     self.features: list of names of gene groups
+    
+    
+    Parameters
+    ----------
+    is_dropT1: bool
+        Drop time T1
+    is_stage_averaged: bool
+        Average log units by stage
+    
+    Returns
+    -------
     """
     super().__init__(**kwargs)
-    self.df_X = transform_data.aggregateGenes(
-        df=self.df_X)
+    if is_stage_averaged:
+      COL_Y = "col_y"
+      df_X = self.df_X.copy()
+      df_X[COL_Y] = self.ser_y
+      self.df_X = df_X.groupby(COL_Y).mean()
+      ser_y = pd.Series([n for n in range(len(set(self.ser_y.values)))])
+      self.ser_y = ser_y
+      indices = ["S%d" % n for n in self.ser_y]
+      self.df_X.index = indices
+      self.ser_y.index = indices
+      # Variability of the aggregation by stage
+      self.df_std = df_X.groupby(COL_Y).std()
+    else:
+      self.df_X = transform_data.aggregateGenes(
+          df=self.df_X)
+      self.df_std = None
     drop_indices = self._getDropIndices(self.df_X.index)
     self.df_X = self.df_X.drop(drop_indices)
     if is_dropT1:

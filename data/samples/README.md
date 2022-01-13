@@ -39,3 +39,7 @@ is the same data but removes all lines with "N/A" and deletes the
 
 Notes
 1. Has duplicate values for gene Rv0687
+
+## GSE67035\_U19\_expr\_counts.csv (1/12/2022)
+[Data details](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE67035). Eliza's summary: [The data]
+has both High Iron and Low Iron conditions (Low iron after both 1 day and 1 week) for Mtb H37Rv. Attached are the counts, the RPKM values are also available.

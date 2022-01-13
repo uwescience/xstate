@@ -115,8 +115,7 @@ class TestSampleData(unittest.TestCase):
     if IGNORE_TEST:
       return
     def getDFS(sample):
-      return [sample.df_AW, sample.df_AM_MDM, sample.df_galagan,
-          sample.df_GSE167232, sample.df_rustad]
+      return list(sample.values())
     #
     def test_single(**kwargs):
       sample = sample_data.getSampleData(**kwargs)
@@ -143,8 +142,10 @@ class TestSampleData(unittest.TestCase):
         sample_data.REF_TYPE_POOLED,
         ]
     for ref_type in ref_types:
-      sample_large = test_single(is_regulator=False, ref_type=ref_type)
-      sample_small = test_single(is_regulator=True, ref_type=ref_type)
+      sample_large = test_single(
+          is_regulator=False, ref_type=ref_type)
+      sample_small = test_single(
+          is_regulator=True, ref_type=ref_type)
       test_greater(sample_large, sample_small)
 
   def testSerialize(self):

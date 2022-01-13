@@ -116,6 +116,17 @@ class TestTrinaryData(unittest.TestCase):
     self.assertEqual(data1.ser_y[data1.ser_y==0].count(),
           NUM_REPL)
 
+  def testIsStageAveraged(self):
+    if IGNORE_TEST:
+      return
+    def test(data):
+      self.assertEqual(len(data.df_X), len(data.ser_y))
+    #
+    data = TrinaryData(is_stage_averaged=True)
+    test(data)
+    data = TrinaryData(is_dropT1=False, is_stage_averaged=True)
+    test(data)
+
   def testPlotFeatureSignificanceByState(self):
     if IGNORE_TEST:
       return
