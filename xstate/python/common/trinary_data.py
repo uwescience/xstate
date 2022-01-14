@@ -194,6 +194,19 @@ class TrinaryData(NormalizedData):
     self.features = self.df_X.columns.tolist()
     self.df_fstat = None
 
+  def indexToInt(self):
+    """
+    Indices of df_X have a leading character; "T" for time, "S" for stage.
+    Strip this and make the index the trailing integer. 
+    
+    Returns
+    -------
+    pd.DataFrame
+    """
+    df_X = self.df_X.copy()
+    df_X.index = [int(i[1:]) for i in self.df_X.index]
+    return df_X
+
   def plotFeatureSignificanceByState(self,
       max_sl=0.25, max_rank=50, is_plot=True,
       figsize=(8, 6), is_color_bar=True):
