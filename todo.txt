@@ -1,5 +1,2 @@
-1. Handle feature combinations via "--"
-     a) generalize isCompatible
-     b) predict must consider multiple possible predictions
-2. Prediction must have option to consider only those feature vectors
-   that exist in the training data.
+1. Create a table of correlations with myco + bact. genes
+2. Redo analyses w/o Rv2341 in bacterioferritn

@@ -107,7 +107,7 @@ class ClassificationData():
     ]
     self._addName("MYCOBACTIN_GENES", MYCOBACTIN_GENES)
     BACTERIOFERRITIN_GENES = [
-      "Rv2341", "Rv3841", 
+      "Rv3841", 
     ]
     self._addName("BACTERIOFERRITIN_GENES", BACTERIOFERRITIN_GENES)
     MYCOBACTIN_BACTERIOFERRIN_GENES = list(MYCOBACTIN_GENES)
@@ -237,8 +237,17 @@ class ClassificationData():
     ----------
     globals_dct: dict
     """
-    self.deserialize()
-    self.setNamespace(globals_dct)
+    self.setNamespace(self.getDct())
+
+  def getDct(self):
+    """
+    Deserializes an existing persister file.
+
+    Returns
+    -------
+    dict
+    """
+    return self.deserialize()
 
   def calcAccuracy(self, num_features=NUM_FEATURES, num_clf=100, is_debug=False):
     """
