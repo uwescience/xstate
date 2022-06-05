@@ -1,5 +1,5 @@
 import common.constants as cn
-from paper import make_data as md
+from paper.cross_validation_data import CrossValidationData
 
 import numpy as np
 import os
@@ -13,8 +13,11 @@ IS_PLOT = False
 
 class TestFunctions(unittest.TestCase):
 
+  def setUp(self):
+    self.data = CrossValidationData(num_clf=10)
+
   def testMakeData(self):
-    df = md.makeAccuracyData(indices=[0, 1])
+    df = self.data.make(indices=[0, 1], num_iter=2)
     import pdb; pdb.set_trace()
 
 
