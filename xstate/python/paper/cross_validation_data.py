@@ -1,4 +1,12 @@
-"""Creates Data Used in Figures for Paper Submission"""
+"""Creates a DataFrame of Cross Validation Data."""
+
+"""
+attribute dataframe: Dataframe
+    index: number of genes in classifier
+    column: classifier name: <ref>--<genes>
+        <ref>: choice for the reference either bioreactor T0 or pooled
+        <genes>: collection of genes used for the classifier
+"""
 
 """
 TODO
@@ -21,6 +29,7 @@ import pandas as pd
 NUM_GENE = 11  # Number of genes considered
 CV_CALCULATION_FILENAME = "cv_calculation"
 DIR_PATH =  os.path.dirname(os.path.abspath(__file__))
+CSV = "csv"
 
 
 class CrossValidationData(object):
@@ -47,6 +56,31 @@ class CrossValidationData(object):
     self.gene_dct = self.namespace_dct["GENE_DCT"]
     # Classifiers keyed by training data and genes
     self.classifier_dct = self.namespace_dct["CLASSIFIER_DCT"]
+    #
+    self._dataframe = None  # Dataframe of cross validation data
+
+  @property
+  def dataframe(self):
+    """
+    Constructs the dataframe of cross validation data
+
+    Parameters
+    ----------
+    base_name: str
+    
+    Returns
+    -------
+    pd.DataFrame
+    """
+    if self._dataframe is None:
+      files = self._get_files()
+      dfs = []
+      for ffile in files:
+        df = pd.csv_read(ffile)
+        dfs.append(df)
+      self._dataframe = pd.concat(dfs, axis=1)
+    return self._dataframe
+     
 
   def make(self, indices=None, num_iter=10):
     """
@@ -90,9 +124,8 @@ class CrossValidationData(object):
         result_dct[classifier_name].append(accuracy)
     #
     df = pd.DataFrame(result_dct, index=ranks)
-    df.index = [v + 1 for v in df.index]
     if self.dir_path is not None:
-      path self._makeFilePath(indices)
+      path = self._makeFilePath(indices)
       df.to_csv(path)
     return df
 
@@ -109,10 +142,10 @@ class CrossValidationData(object):
     str
     """
     sfx = "_".join([str(v) for v in indices])
-    filename = "%s_%s.csv" % (CV_CALCULATION_FILENAME, sfx)
+    filename = "%s_%s.%s" % (CV_CALCULATION_FILENAME, sfx, CSV)
     return os.path.join(self.dir_path, filename)
 
-  def _getFilePaths(self):
+  def _getPaths(self):
     """
     Gets the cross validation files in the directory.
  
@@ -120,36 +153,21 @@ class CrossValidationData(object):
     -------
     list-str
     """
-    files = os.listdir(self.dir_path)
-    files = [CV_CALCULATION_FILENAME in f for f in files]
-    return files
+    def check(ffile):
+      return (CV_CALCULATION_FILENAME in ffile)  \
+           & (CV in ffile)
+    #
+    paths = os.listdir(self.dir_path)
+    paths = [f for f in paths if check(f)]
+    return paths
 
   def clean(self):
     """
     Removes all existing cross validation files.
     """
-    ffiles = self._get_files()
+    ffiles = self._getPaths()
     for ffile in ffiles:
       os.remove(ffile)
-
-  def report(base_name):
-    """
-    Merges files with the same base name as columns in a dataframe.
-
-    Parameters
-    ----------
-    base_name: str
-    
-    Returns
-    -------
-    pd.DataFrame
-    """
-    files = self._get_files()
-    dfs = []
-    for ffile in files:
-      df = pd.csv_read(ffile)
-      dfs.append(df)
-    return pd.concat(dfs, axis=1)
 
 if __name__ == '__main__':
   desc = 'Create cross validation data'
