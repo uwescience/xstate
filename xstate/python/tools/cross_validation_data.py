@@ -15,13 +15,11 @@ TODO
 3. Create a class so merge the result.
 """
 
-from common import constants as cn
 from common_python.util import dataframe
 from tools.make_classification_data import ClassificationData
 
 import argparse
 import copy
-import numpy as np
 import os
 import pandas as pd
 from pathlib import Path
@@ -49,8 +47,8 @@ class CrossValidationData(object):
     self.num_clf = num_clf
     self.max_gene = max_gene
     self.dir_path = dir_path
-    data = ClassificationData()
-    self.namespace_dct = data.getDct()  # Serialized data from classifier constructions
+    classification_data = ClassificationData()
+    self.namespace_dct = classification_data.getDct()  # Serialized data
     # Hypoxia data sources keyed by name of data source
     self.data_dct = self.namespace_dct["DATA_DCT"]
     # Collections of genes keyed by name of gene collection
@@ -68,7 +66,7 @@ class CrossValidationData(object):
     Parameters
     ----------
     base_name: str
-    
+
     Returns
     -------
     pd.DataFrame
@@ -87,19 +85,19 @@ class CrossValidationData(object):
       self._dataframe.index = list(range(1, len(self._dataframe) + 1))
       self._dataframe.index.name = "num_gene"
     return self._dataframe
-     
+
 
   def make(self, indices=None, num_iter=10):
     """
     Creates the data needed for accuracy plots based on cross validations.
-  
+
     Parameters
     ----------
     indices: list-int
         Indicies of keys to process
     num_iter: int
         Number of iterations of cross validation
-  
+
     Returns
     -------
     pd.DataFrame
@@ -111,7 +109,7 @@ class CrossValidationData(object):
     columns = []
     result_dct = {}
     if indices is None:
-      classifier_dct = CLASSIFIER_DCT
+      classifier_dct = self.classifier_dct
     else:
       keys = list(self.classifier_dct.keys())
       classifier_dct = {k: self.classifier_dct[k] for k in keys
@@ -121,7 +119,6 @@ class CrossValidationData(object):
       result_dct[classifier_name] = []
       columns.append(classifier_name)
       # Accuracy of classifier that includes this gene and all preceding genes
-      accuracy_dct = {}
       trinary = copy.deepcopy(self.data_dct[key[0]])
       trinary.df_X = dataframe.subset(trinary.df_X, self.gene_dct[key[1]])
       for rank in ranks:
@@ -133,7 +130,7 @@ class CrossValidationData(object):
     df = pd.DataFrame(result_dct, index=ranks)
     if self.dir_path is not None:
       path = self._makePath(indices)
-      df.to_csv(path)
+      df.to_csv(path, index=False)
     return df
 
   def _makePath(self, indices):
@@ -143,7 +140,7 @@ class CrossValidationData(object):
     Parameters
     ----------
     indices: list-int
-    
+
     Returns
     -------
     Path
@@ -155,7 +152,7 @@ class CrossValidationData(object):
   def _getPaths(self):
     """
     Gets the cross validation files in the directory.
- 
+
     Returns
     -------
     list-Path
@@ -185,12 +182,12 @@ if __name__ == '__main__':
   parser.add_argument('--end', '-e',  help='ending index',
       type=int, default=-1)
   parser.add_argument('--clean', '-c',  help='Clean the directory',
-      type=int, default=7)
+      type=bool, default=False)
   args = parser.parse_args()
   #
   data = CrossValidationData()
   if args.clean:
     data.clean()
-  if (start >= 0) and (end >= 0):    
+  if (args.start >= 0) and (args.end >= 0):
     indices = list(range(args.start, args.end))
-    _ = data.makeCrossValidationData(indices=indices)
+    _ = data.make(indices=indices, num_iter=10)

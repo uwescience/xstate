@@ -1,5 +1,5 @@
 import common.constants as cn
-from paper import cross_validation_data as cvd
+from tools import cross_validation_data as cvd
 
 import numpy as np
 import os
