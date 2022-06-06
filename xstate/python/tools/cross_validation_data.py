@@ -15,6 +15,7 @@ TODO
 3. Create a class so merge the result.
 """
 
+from common import constants as cn
 from common_python.util import dataframe
 from tools.make_classification_data import ClassificationData
 
@@ -27,7 +28,7 @@ from pathlib import Path
 # Constants
 NUM_GENE = 11  # Number of genes considered
 CV_CALCULATION_FILENAME = "cv_calculation"
-DIR_PATH =  os.path.dirname(os.path.abspath(__file__))
+DIR_PATH =  os.path.join(cn.DATA_DIR, "cross_validation_data")
 CSV = "csv"
 
 

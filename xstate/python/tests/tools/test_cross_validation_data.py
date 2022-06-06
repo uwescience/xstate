@@ -75,6 +75,13 @@ class TestFunctions(unittest.TestCase):
     self.assertEqual(len(df.columns), 2)
     self.assertEqual(len(df), cvd.NUM_GENE)
 
+  def test_dataframeDataDirectory(self):
+    if IGNORE_TEST:
+      return
+    self.data = cvd.CrossValidationData()
+    df = self.data.dataframe
+    self.assertEqual(len(df), cvd.NUM_GENE)
+
 
 if __name__ == '__main__':
   unittest.main()
