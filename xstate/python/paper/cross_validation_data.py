@@ -24,6 +24,7 @@ import copy
 import numpy as np
 import os
 import pandas as pd
+from pathlib import Path
 
 # Constants
 NUM_GENE = 11  # Number of genes considered
@@ -73,12 +74,18 @@ class CrossValidationData(object):
     pd.DataFrame
     """
     if self._dataframe is None:
-      files = self._get_files()
+      files = self._getPaths()
       dfs = []
       for ffile in files:
-        df = pd.csv_read(ffile)
+        df = pd.read_csv(ffile)
         dfs.append(df)
       self._dataframe = pd.concat(dfs, axis=1)
+      del_columns = [c for c in self._dataframe.columns if "Unnamed:" in c]
+      for column in del_columns:
+        if column in self._dataframe.columns:
+          del self._dataframe[column]
+      self._dataframe.index = list(range(1, len(self._dataframe) + 1))
+      self._dataframe.index.name = "num_gene"
     return self._dataframe
      
 
@@ -125,11 +132,11 @@ class CrossValidationData(object):
     #
     df = pd.DataFrame(result_dct, index=ranks)
     if self.dir_path is not None:
-      path = self._makeFilePath(indices)
+      path = self._makePath(indices)
       df.to_csv(path)
     return df
 
-  def _makeFilePath(self, indices):
+  def _makePath(self, indices):
     """
     Constructs the path for the indices.
 
@@ -139,11 +146,11 @@ class CrossValidationData(object):
     
     Returns
     -------
-    str
+    Path
     """
     sfx = "_".join([str(v) for v in indices])
     filename = "%s_%s.%s" % (CV_CALCULATION_FILENAME, sfx, CSV)
-    return os.path.join(self.dir_path, filename)
+    return Path(os.path.join(self.dir_path, filename))
 
   def _getPaths(self):
     """
@@ -151,14 +158,15 @@ class CrossValidationData(object):
  
     Returns
     -------
-    list-str
+    list-Path
     """
     def check(ffile):
+      ffile = str(ffile)
       return (CV_CALCULATION_FILENAME in ffile)  \
-           & (CV in ffile)
+           & (CSV in ffile)
     #
     paths = os.listdir(self.dir_path)
-    paths = [f for f in paths if check(f)]
+    paths = [os.path.join(self.dir_path, f) for f in paths if check(f)]
     return paths
 
   def clean(self):
