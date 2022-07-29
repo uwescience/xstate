@@ -1,10 +1,12 @@
 import os
 import sys
 
-base_dir = "/home/xstate"
-xstate_dir = str(base_dir)
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(
+    os.path.abspath(__file__))))
+MINION_CODE_DIR = BASE_DIR
 for directory in ["xstate", "python"]:
-  xstate_dir = os.path.join(xstate_dir, directory)
-sys.path.insert(0, xstate_dir)
-common_dir = os.path.join(base_dir, "common_python")
-sys.path.insert(0, common_dir)
+  MINION_CODE_DIR = os.path.join(MINION_CODE_DIR, directory)
+sys.path.insert(0, MINION_CODE_DIR)
+COMMON_CODE_DIR = os.path.join(BASE_DIR, "common_python")
+sys.path.insert(0, COMMON_CODE_DIR)

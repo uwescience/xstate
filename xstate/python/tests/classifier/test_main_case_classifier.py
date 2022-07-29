@@ -12,8 +12,8 @@ import shutil
 import unittest
 
 
-IGNORE_TEST = True
-IS_PLOT = True
+IGNORE_TEST = False
+IS_PLOT = False
 DIR = os.path.dirname(os.path.abspath(__file__))
 TEST_OUT_PATH = os.path.join(DIR,
      "test_main_case_classifier.csv")
@@ -50,7 +50,8 @@ class TestFunctions(unittest.TestCase):
         nan_columns=columns))
   
   def testRun(self):
-    # TESTING
+    if IGNORE_TEST:
+      return
     #
     with open(TEST_IN_PATH, "r") as in_fd:
       with open(TEST_OUT_PATH, "w") as out_fd:
