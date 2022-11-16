@@ -1,0 +1,12 @@
+numpy
+pandas
+requests
+matplotlib
+nose
+pylint
+seaborn
+scipy
+scikit-learn
+seaborn
+jupyterlab
+xlrd
