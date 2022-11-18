@@ -235,7 +235,7 @@ def calcTrinaryComparison(df, ser_ref, threshold=1, is_convert_log2=True):
   if ser_ref is None:
     ser_ref_log = pd.Series(np.repeat(0, len(df)), index=df.index)
   # Find the common indices
-  indices = set(df_log.index).intersection(ser_ref_log.index)
+  indices = list(set(df_log.index).intersection(ser_ref_log.index))
   df_log = df_log.loc[indices, :]
   ser_ref_log = ser_ref_log[indices]
   df_comp_T = df_log.T - ser_ref_log

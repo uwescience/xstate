@@ -37,9 +37,12 @@ in log2 units.
 is the same data but removes all lines with "N/A" and deletes the
 "Gene\_name" column.
 
+``Sputa\_transcriptomes_Waddell.xlsx`` is from a [paper](https://bmcmedicine.biomedcentral.com/articles/10.1186/s12916-016-0609-3) that describes Sputum for GM_All TB genes_all norms – This spreadsheet contains all genes on the array, all 52 sputa samples, array quantile normalised to account for array-array variation, then either no gene normalisation, median gene normalisation, norm to mean of the sputa day 0s, or by individual patient day 0.".
+
 Notes
 1. Has duplicate values for gene Rv0687
 
 ## GSE67035\_U19\_expr\_counts.csv (1/12/2022)
 [Data details](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE67035). Eliza's summary: [The data]
 has both High Iron and Low Iron conditions (Low iron after both 1 day and 1 week) for Mtb H37Rv. Attached are the counts, the RPKM values are also available.
+

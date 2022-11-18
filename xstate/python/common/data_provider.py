@@ -579,7 +579,7 @@ class DataProvider(object):
     """
     names = np.repeat(None, ser_y.max() + 1)
     last_name = None
-    for timepoint, value in ser_y.iteritems():
+    for timepoint, value in ser_y.items():
       if "." in timepoint:
         new_timepoint = timepoint[0:-2]
       else:

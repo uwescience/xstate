@@ -1,2 +1,1 @@
-1. Create a table of correlations with myco + bact. genes
-2. Redo analyses w/o Rv2341 in bacterioferritn
+1. Get the Sputum data into the standard format

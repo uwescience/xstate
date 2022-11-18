@@ -38,9 +38,8 @@ def subsetToRegulators(df):
   regulators = PROVIDER.df_trn_unsigned[cn.TF]
   regulators = list(set(regulators))
   regulator_cols = list(set(df.columns).intersection(regulators))
-  for column in df.columns:
-    if not column in regulator_cols:
-      del df[column]
+  drop_columns = list(set(df.columns).difference(regulator_cols))
+  df.drop(labels=drop_columns, axis=1, inplace=True)
 
 def convertToTrinary(df, threshold_low=-1, threshold_high=1):
   """
