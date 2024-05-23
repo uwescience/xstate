@@ -73,7 +73,7 @@ class TestClassificationData(unittest.TestCase):
  
   def testInitialize(self):
     if IGNORE_TEST:
-      return
+        return
     self.data.persister.remove()
     self.data.initialize()
     self.data.setNamespace(globals())
@@ -97,7 +97,7 @@ class TestClassificationData(unittest.TestCase):
  
   def testCalcAccuracy(self):
     if IGNORE_TEST:
-      return
+        return
     self.data.deserialize()
     df = self.data.calcAccuracy(is_debug=True)
     diff = set(df.columns).symmetric_difference(

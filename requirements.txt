@@ -3,6 +3,7 @@ pandas
 requests
 matplotlib
 nose
+openpyxl
 pylint
 seaborn
 scipy
